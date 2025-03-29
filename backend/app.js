@@ -68,17 +68,25 @@ app.post('/api/messages/:channel', (req, res) => {
 app.put('/api/messages/:channel/:id', (req, res) => {
     // see if exists
     let message = messages.find(m => m.id === parseInt(req.params.id))
-    if (!message) {res.status(404).send("err: message not found")}
+    if (!message) { return res.status(404).send("err: message not found")}
 
     // validate request
     const {error} = validateMessage(req.body)
-    if (error) {
-        res.status(400).send(error.details[0].message)
-        return;
-    }
+    if (error) {return res.status(400).send(error.details[0].message)}
 
     // update message
     message.content = req.body.content
+    res.send(message)
+})
+
+app.delete('/api/messages/:channel/:id', (req, res) => {
+    // search to see if exists
+    let message = messages.find(m => m.id === parseInt(req.params.id))
+    if (!message) { return res.status(404).send("error: message not found")}
+
+    // delete message
+    const messageToRemove = messages.indexOf(message)
+    messages.splice(messageToRemove, 1)
     res.send(message)
 })
 
