@@ -29,10 +29,7 @@ app.get('/api/info/:channel', (req, res) => {
 
 app.get('/api/messages/:channel/:id', (req, res) => {
     let defaultAmount = 10 || req.query.amount;
-    if (req.query.amount > 20) {
-        res.status(400).send("Maximum amount is 20")
-        return;
-    }
+    if (req.query.amount > 20) {return res.status(400).send("Maximum amount is 20")}
     //TODO:
     switch (req.query.loadmethod) {
         case 'around':
