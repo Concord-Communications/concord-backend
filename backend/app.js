@@ -22,7 +22,12 @@ app.get('/api/', (req, res) => {
     res.send("Hello World")
 })
 
-app.get('/api/messages/:id', (req, res) => {
+app.get('/api/info/:channel', (req, res) => {
+    // send the id of the latest message
+    res.send(messages.length.toString())
+})
+
+app.get('/api/messages/:channel/:id', (req, res) => {
     let defaultAmount = 10 || req.query.amount;
     if (req.query.amount > 20) {
         res.status(400).send("Maximum amount is 20")
