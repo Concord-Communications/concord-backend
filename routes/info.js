@@ -13,4 +13,9 @@ router.get('/channels', (req, res) => {
     res.status(500).send("service unavailable, no database set up")
 })
 
+router.get('/users', (req, res) => {
+    // show all users
+    res.status(500).send("service unavailable, no database set up")
+})
+
 module.exports = router;
