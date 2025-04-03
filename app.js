@@ -5,6 +5,7 @@ const app = express()
 const messagesRoutes = require("./routes/messages")
 const infoRoutes = require("./routes/info")
 
+
 console.log(`environment: ${process.env.NODE_ENV}`);
 
 app.use(express.json())
@@ -22,7 +23,6 @@ const port = process.env.PORT || 8080;
 app.listen(port, () => {
     console.log(`Server started on port ${port}...`)
 })
-
 
 
 
