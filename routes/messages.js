@@ -3,32 +3,29 @@
 const Joi = require("joi");
 const express = require("express");
 const router = express.Router();
+const conn = require("../dbconnecter")
 
 let messages = [
     {id: 1, user: "system", content: "-- Channel Start --" },
 ]
 
-router.get('/:channel/:id', (req, res) => {
+router.get('/:channel/:id', async (req, res) => {
     let defaultAmount = 10 || req.query.amount;
     if (req.query.amount > 20) {return res.status(400).send("Maximum amount is 20")}
-    //TODO:
-    switch (req.query.loadmethod) {
-        case 'around':
-            // messages around the id
-            break;
-        case 'ahead':
-            // messages ahead of the id
-            break;
-        case 'behind':
-            // messages behind the id
-            break;
-        default:
-            // messages ahead of the id
-            break;
-    }
-    let response_message = messages.find(m => m.id === parseInt(req.params.id))
-    if (!response_message) {res.status(404).send("err: message not found")}
-    res.send(response_message)
+    const limit = parseInt(req.query.amount) || 10;
+
+    conn.query(
+        'SELECT * FROM message WHERE id >= ? ORDER BY date DESC LIMIT ?',
+        [parseInt(req.params.id), limit],
+        (err, result) => {
+            if (err) {
+                console.error(err);
+                res.status(500).json("internal server error");
+                return;
+            }
+        // yay callbacks
+        res.send(result)
+    })
 })
 
 router.post('/:channel', (req, res) => {
