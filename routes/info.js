@@ -14,18 +14,17 @@ router.get('/channels', (req, res) => {
     res.status(500).send("service unavailable, no database set up")
 })
 
-router.get('/users', async (req, res) => {
-    // show all users
-    //TODO: make an optional choice to limit how many users queried
-    res.status(500).send("service unavailable, no database set up")
-})
-
 router.get('/health', async (req, res) => {
     // show all users
     //TODO: make an optional choice to limit how many users queried
+    res.status(200).send("Still alive.")
+})
 
+router.get('/users', async (req, res) => {
+    // show all users
+    //TODO: make an optional choice to limit how many users queried
     conn.query(
-        'SELECT * FROM child',
+        'SELECT id, name, handle, description, created, verified FROM User',
         (err, results) => {
             if (err) {
                 res.status(500).json({ error: err.message });
@@ -35,7 +34,6 @@ router.get('/health', async (req, res) => {
         }
     );
 
-    // res.status(200).send("works on my machine")
 })
 
 module.exports = router;
