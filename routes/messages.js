@@ -28,16 +28,29 @@ router.get('/:channel/:id', async (req, res) => {
     })
 })
 
-router.post('/:channel', (req, res) => {
+router.post('/:channel', async (req, res) => {
     // request validation
     // needs a name that is less than 18 characters but is more than 0
-    const {error} = validateMessage(req.body)
+    const {error, value} = validateMessage(req.body)
     if (error) {
         res.status(400).send(error.details[0].message)
         return
     }
-    messages.push(value)
-    res.send(value)
+
+    let reactions = req.body.reactions.toString() || '[]';
+
+    conn.query(
+        'INSERT INTO Message (senderid, content, reactions) VALUES (?, ?, ?);',
+        [parseInt(req.body.senderid), req.body.content, reactions],
+        (err, result) => {
+            if (err) {
+                console.error(err);
+                res.status(500).json("internal server error");
+                return;
+            }
+            res.send(req.body);
+        }
+    )
 })
 
 router.put('/:channel/:id', (req, res) => {
@@ -67,8 +80,9 @@ router.delete('/:channel/:id', (req, res) => {
 
 function validateMessage(course) {
     const schema = Joi.object({
-        user: Joi.string().min(3).required(),
-        content: Joi.string()
+        senderid: Joi.number().required(),
+        content: Joi.string().required(),
+        reactions: Joi.array().items(Joi.string().max(1))
     })
     return {error, value} = schema.validate(course)
 }

@@ -18,5 +18,10 @@ CREATE TABLE Message (
                          date DATETIME DEFAULT CURRENT_TIMESTAMP,
                          FOREIGN KEY (senderid) REFERENCES User(id) ON DELETE CASCADE
 );
+CREATE TABLE channels (
+                          id INTEGER PRIMARY KEY AUTO_INCREMENT,
+                          name VARCHAR(18) NOT NULL,
+                          description VARCHAR(35)
+);
 CREATE USER 'your_username'@'localhost' IDENTIFIED BY 'your_password';
 GRANT INSERT, UPDATE, DELETE, SELECT on *.* TO 'your_username'@'localhost' WITH GRANT OPTION;
