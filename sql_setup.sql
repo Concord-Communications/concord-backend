@@ -16,6 +16,8 @@ CREATE TABLE Message (
                          content TEXT NOT NULL,
                          reactions JSON NOT NULL,
                          date DATETIME DEFAULT CURRENT_TIMESTAMP,
+                         channelid INT NOT NULL,
+                         FOREIGN KEY (channelid) REFERENCES channels ON DELETE CASCADE,
                          FOREIGN KEY (senderid) REFERENCES User(id) ON DELETE CASCADE
 );
 CREATE TABLE channels (
@@ -23,5 +25,8 @@ CREATE TABLE channels (
                           name VARCHAR(18) NOT NULL,
                           description VARCHAR(35)
 );
+INSERT INTO User (id, name, handle, description, permissions, channels, password) VALUES
+        (0,"[System]", "system", "system message helper", 0, '[]', "");
 CREATE USER 'your_username'@'localhost' IDENTIFIED BY 'your_password';
 GRANT INSERT, UPDATE, DELETE, SELECT on *.* TO 'your_username'@'localhost' WITH GRANT OPTION;
+

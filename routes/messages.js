@@ -5,18 +5,23 @@ const express = require("express");
 const router = express.Router();
 const conn = require("../dbconnecter")
 
-let messages = [
-    {id: 1, user: "system", content: "-- Channel Start --" },
-]
+
+router.get("/latest/:channel", async (req, res) => {
+    conn.query('SELECT id FROM message ORDER BY date DESC LIMIT 1', (err, results) => {
+        if (err) {res.status(500).json("internal server error"); console.error(err); return;}
+        res.send(results);
+    })
+})
 
 router.get('/:channel/:id', async (req, res) => {
+    // channel and then messages after that specified id
     let defaultAmount = 10 || req.query.amount;
     if (req.query.amount > 20) {return res.status(400).send("Maximum amount is 20")}
     const limit = parseInt(req.query.amount) || 10;
 
     conn.query(
-        'SELECT * FROM message WHERE id >= ? ORDER BY date DESC LIMIT ?',
-        [parseInt(req.params.id), limit],
+        'SELECT * FROM message WHERE id >= ? AND channelid = ? ORDER BY date DESC LIMIT ?',
+        [parseInt(req.params.id), parseInt(req.params.channel), limit],
         (err, result) => {
             if (err) {
                 console.error(err);
@@ -40,8 +45,8 @@ router.post('/:channel', async (req, res) => {
     let reactions = req.body.reactions.toString() || '[]';
 
     conn.query(
-        'INSERT INTO Message (senderid, content, reactions) VALUES (?, ?, ?);',
-        [parseInt(req.body.senderid), req.body.content, reactions],
+        `INSERT INTO Message (senderid, content, reactions, channelid) VALUES (?, ?, \'[]\', ?);`,
+        [parseInt(req.body.senderid), req.body.content, reactions, parseInt(req.params.channel)],
         (err, result) => {
             if (err) {
                 console.error(err);
@@ -53,38 +58,78 @@ router.post('/:channel', async (req, res) => {
     )
 })
 
-router.put('/:channel/:id', (req, res) => {
+router.put('/:channel/:id', async (req, res) => {
+    // update message
     // see if exists
-    let message = messages.find(m => m.id === parseInt(req.params.id))
-    if (!message) { return res.status(404).send("err: message not found")}
+    if (!seeIfExistsMessage(req.params.id, req.params.channel)) {return res.status(404).send("resource not found");}
 
     // validate request
     const {error} = validateMessage(req.body)
     if (error) {return res.status(400).send(error.details[0].message)}
 
     // update message
-    message.content = req.body.content
-    res.send(message)
+    conn.query(
+        'UPDATE message SET content = ? WHERE id = ? AND channelid = ? LIMIT 1;',
+        [req.body.content, req.params.id, req.params.channel],
+        (error, result) => {
+            if (error) {console.error(error); res.status(500).json("internal server error"); return;}
+            conn.query(
+                'SELECT * FROM message WHERE id = ? AND channelid = ? LIMIT 1;',
+                [req.params.id, req.params.channel],
+                (err2, result2) => {
+                    if (error) {console.error(error); res.status(500).json("internal server error"); return;}
+                    res.send(result2);
+                }
+            )
+        })
 })
 
 router.delete('/:channel/:id', (req, res) => {
     // search to see if exists
-    let message = messages.find(m => m.id === parseInt(req.params.id))
-    if (!message) { return res.status(404).send("error: message not found")}
+    if (!seeIfExistsMessage(req.params.id, req.params.channel)) {return res.status(404).send("resource not found");}
 
     // delete message
-    const messageToRemove = messages.indexOf(message)
-    messages.splice(messageToRemove, 1)
-    res.send(message)
+    conn.query(
+        'UPDATE message SET content = "Message Deleted", senderid = 0 WHERE id = ? AND channelid = ? LIMIT 1;',
+        // sender id 0 for system announcements
+        [req.params.id, req.params.channel],
+        (error, result) => {
+            if (error) {console.error(error); res.status(500).json("internal server error"); return;}
+            conn.query(
+                'SELECT * FROM message WHERE id = ? AND channelid = ? LIMIT 1;',
+                [req.params.id, req.params.channel],
+                (err2, result2) => {
+                    if (error) {console.error(error); res.status(500).json("internal server error"); return;}
+                    res.send(result2);
+                }
+            )
+        })
+
 })
 
 function validateMessage(course) {
     const schema = Joi.object({
         senderid: Joi.number().required(),
         content: Joi.string().required(),
-        reactions: Joi.array().items(Joi.string().max(1))
     })
     return {error, value} = schema.validate(course)
+}
+
+
+function seeIfExistsMessage(id, channel) {
+    conn.query(
+        'SELECT 1 FROM message WHERE id = ? AND channelid = ? LIMIT 1;',
+        [parseInt(req.params.id), parseInt(req.params.channel)],
+        (err, result) => {
+            if (err) {res.status(500).json("internal server error"); console.error(err); return;}
+
+
+            if (result[0]["1"] != 1) {
+                return true
+            }
+        }
+    )
+    return false;
 }
 
 module.exports = router;
