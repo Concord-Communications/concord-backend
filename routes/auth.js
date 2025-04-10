@@ -1,10 +1,11 @@
 // intended for /api/auth
 
-const conn = require('../dbconnecter')
-const express = require('express')
-const Joi = require("joi");
-const {string} = require("joi");
-const router = express.Router()
+import { conn } from '../dbconnecter.js'
+import express from 'express'
+import Joi from "joi"
+// import { string } from "joi"
+
+export const router = express.Router()
 
 function validateUser(user) {
     const schema = Joi.object({
@@ -13,55 +14,65 @@ function validateUser(user) {
         description: Joi.string().required(),
         password: Joi.string().min(8).max(30).required()
     })
-    return {error, value} = schema.validate(user)
+
+    const { error, value } = schema.validate(user)
+    return { error, value }
 }
 
-async function findUserFromHandle(req, res) {
-    let errorfound = false;
-    conn.query(
-        'SELECT 1 FROM User WHERE handle = ?',
-        [req.body.userhandle],
-        (error, result) => {
-            if (error) {console.error(error); errorfound = true; return errorfound}
-            console.log("result0:", result.length)
-            if (result.length > 0) {
-                res.status(409).send("User already exists");
-                errorfound = true;
-                return errorfound;
-            }
-        })
-    return errorfound;
-}
+async function findUserFromHandle(req) {
+    let errorfound = false
 
-async function createUser(req, res) {
-    let errorfound = false;
-    conn.query(
-        "INSERT INTO User (name, handle, description, password, permissions, channels) VALUES (?, ?, ?, ?, 0, '[]');",
-        [req.body.name, req.body.userhandle, req.body.description, req.body.password],
-        (error, result) => {
-            if (error) {console.error(error); res.status(500).send("Internal server error"); errorfound = true; return;}
-            res.send({id: result.insertId}); // client is expected to query "/api/info/user"
-            return;
-        })
-    console.log("still running")
-    return errorfound;
+    try {
+        const [rows] = await conn.execute(
+            'SELECT 1 FROM User WHERE handle = ?',
+            [req.body.userhandle]
+        )
+
+        errorfound = rows.length > 0
+    } catch (error) {
+        console.error(`🧙 You have an error: ${error.message}`)
+        errorfound = true
+    }
+
+    return errorfound
 }
 
 router.post('/register', async (req, res) => {
-    if (!process.env.creating_users_permitted) {res.status(401).send("This server requires invites"); return;}
-    const {error, value} = validateUser(req.body)
-    if (error) { res.status(400).send(error.details[0].message); return }
+    if (!process.env.creating_users_permitted) {
+        res.status(401).send("This server requires invites")
+        return
+    }
 
-    await findUserFromHandle(req, res).then((result) => {
-        console.log(result)
-        if (result) { return }
-    })
+    const { error } = validateUser(req.body)
 
-    await createUser(req, res).then((result) => {
-        console.log(result)
-        if (result) { return }
-    })
+    if (error) {
+        return res.status(400).send(error.details[0].message)
+    }
+
+    const errorFound = await findUserFromHandle(req, res)
+
+    if (errorFound) {
+        return res.status(409).send("User already exists")
+    }
+
+    const result = await createUser(req, res)
+
+    return result ? res.status(200).send("User created successfully")
+                  : res.status(500).send("Error creating user")
 })
 
 
-module.exports = router;
+async function createUser(req) {
+    try {
+        const [result] = await conn.execute(
+            "INSERT INTO User (name, handle, description, password, permissions, channels) VALUES (?, ?, ?, ?, 0, '[]')",
+            [req.body.name, req.body.userhandle, req.body.description, req.body.password]
+        )
+
+        return true
+    } catch (error) {
+        console.error(error)
+    }
+
+    return false
+}

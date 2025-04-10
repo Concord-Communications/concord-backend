@@ -1,7 +1,8 @@
 // This file is intended to be used for the "/api/info/*" route
-const express = require('express')
-const router = express.Router()
-const conn = require('../dbconnecter')
+import express from 'express'
+import { conn } from '../dbconnecter.js'
+
+export const router = express.Router()
 
 router.get('/channels/:channel', (req, res) => {
     // send the id of the latest message
@@ -35,4 +36,4 @@ router.get('/users', async (req, res) => {
 
 })
 
-module.exports = router;
+// module.exports = router;

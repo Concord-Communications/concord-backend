@@ -1,10 +1,11 @@
-const helmet = require('helmet');
-const morgan = require('morgan');
-const express = require('express')
+import helmet from 'helmet';
+import morgan from 'morgan';
+import express from 'express'
+import { router as messagesRoutes } from "./routes/messages.js"
+import { router as infoRoutes } from "./routes/info.js"
+import { router as authroutes } from "./routes/auth.js"
+
 const app = express()
-const messagesRoutes = require("./routes/messages")
-const infoRoutes = require("./routes/info")
-const authroutes = require("./routes/auth")
 
 console.log(`environment: ${process.env.NODE_ENV}`);
 
