@@ -1,7 +1,6 @@
 // This file is intended to be used for the "/api/info/*" route
 const express = require('express')
 const router = express.Router()
-const mysql = require('mysql2')
 const conn = require('../dbconnecter')
 
 router.get('/channels/:channel', (req, res) => {

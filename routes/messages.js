@@ -107,12 +107,12 @@ router.delete('/:channel/:id', (req, res) => {
 
 })
 
-function validateMessage(course) {
+function validateMessage(message) {
     const schema = Joi.object({
         senderid: Joi.number().required(),
         content: Joi.string().required(),
     })
-    return {error, value} = schema.validate(course)
+    return {error, value} = schema.validate(message)
 }
 
 

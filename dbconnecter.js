@@ -7,4 +7,5 @@ const conn = mysql.createConnection({
     database: 'termichat'
 })
 
+
 module.exports = conn;

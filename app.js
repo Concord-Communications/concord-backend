@@ -4,7 +4,7 @@ const express = require('express')
 const app = express()
 const messagesRoutes = require("./routes/messages")
 const infoRoutes = require("./routes/info")
-
+const authroutes = require("./routes/auth")
 
 console.log(`environment: ${process.env.NODE_ENV}`);
 
@@ -17,6 +17,7 @@ if (process.env.NODE_ENV === 'development') {
 // import route files
 app.use('/api/messages', messagesRoutes)
 app.use('/api/info', infoRoutes)
+app.use('/api/auth', authroutes)
 
 const port = process.env.PORT || 8080;
 
