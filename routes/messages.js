@@ -1,9 +1,10 @@
 // This router is meant for the path "/api/messages/*"
 
-const Joi = require("joi");
-const express = require("express");
-const router = express.Router();
-const conn = require("../dbconnecter")
+import Joi from "joi"
+import express from "express"
+import { conn } from "../dbconnecter.js"
+
+export const router = express.Router();
 
 
 router.get("/latest/:channel", async (req, res) => {
@@ -132,4 +133,4 @@ function seeIfExistsMessage(id, channel) {
     return false;
 }
 
-module.exports = router;
+// module.exports = router;

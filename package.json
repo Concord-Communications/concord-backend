@@ -1,6 +1,7 @@
 {
   "name": "termichat-backend",
   "version": "0.1.0",
+  "type": "module",
   "description": "backend for Termichat",
   "main": "app.js",
   "scripts": {
