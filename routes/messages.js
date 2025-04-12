@@ -25,7 +25,7 @@ router.get('/:channel/:id', async (req, res) => {
     const limit = parseInt(req.query.amount) || 10;
 
     try {
-        const [result] = await conn.query(
+        const [result] = await conn.execute(
             'SELECT * FROM message WHERE id >= ? AND channelid = ? ORDER BY date DESC LIMIT ?',
             [parseInt(req.params.id), parseInt(req.params.channel), limit])
         res.send(result)
@@ -47,7 +47,7 @@ router.post('/:channel', async (req, res) => {
     let reactions = req.body.reactions.toString() || '[]';
 
     try {
-        const [result] = await conn.query(
+        const [result] = await conn.execute(
             `INSERT INTO Message (senderid, content, reactions, channelid)
              VALUES (?, ?, \'[]\', ?);`,
             [parseInt(req.body.senderid), req.body.content, reactions, parseInt(req.params.channel)])
