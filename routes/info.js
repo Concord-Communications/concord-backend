@@ -17,22 +17,19 @@ router.get('/channels', (req, res) => {
 router.get('/health', async (req, res) => {
     // show all users
     //TODO: make an optional choice to limit how many users queried
-    res.status(200).send("Still alive.")
+    res.status(200).send("Works on my machine.")
 })
 
 router.get('/users', async (req, res) => {
     // show all users
     //TODO: make an optional choice to limit how many users queried
-    conn.query(
-        'SELECT id, name, handle, description, created, verified FROM User',
-        (err, results) => {
-            if (err) {
-                res.status(500).json({ error: err.message });
-                return;
-            }
-            res.send(results);
-        }
-    );
+    try {
+        const [result] = await conn.query('SELECT id, name, handle, description, created, verified FROM User');
+        res.send(result)
+    }catch (err) {
+        res.status(500).json("internal server error");
+        console.error(err);
+    }
 
 })
 
