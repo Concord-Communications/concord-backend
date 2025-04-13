@@ -7,6 +7,7 @@ import { router as authroutes } from "./routes/auth.js"
 
 const app = express()
 
+console.log("Concord starting up...")
 console.log(`environment: ${process.env.NODE_ENV}`);
 
 app.use(express.json())

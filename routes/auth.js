@@ -57,7 +57,7 @@ router.get('/', async (req, res) => {
 
     try {
 
-        const [result] = await conn.execute('SELECT password, id, permissions FROM User WHERE handle=? LIMIT 1', [req.body.userhandle])
+        const [result] = await conn.execute('SELECT password, id, permissions, channels FROM User WHERE handle=? LIMIT 1', [req.body.userhandle])
 
         if (result == null) {
             return res.status(404).send("No user with matching handle")
@@ -66,8 +66,10 @@ router.get('/', async (req, res) => {
         if(!validpassword) {res.status(401).send('Invalid password'); return}
 
         const token = jwt.sign({
-            id: result[0].id,
+            userID: result[0].id,
             permissions: result[0].permissions,
+            channels: JSON.parse(result[0].channels),
+            tokenVersion: 0,
         }, process.env.JWT_SECRET)
         res.send(token)
 
@@ -104,8 +106,10 @@ router.post('/register', async (req, res) => {
     const details = await findUserByID(result)
     if (!details) {return res.send({id: result, authToken: false})}
     const token = jwt.sign({
-        id: result,
+        userID: result,
         permissions: details[0].permissions,
+        channels: JSON.parse(details[0].channels),
+        tokenVersion: 0,
     }, process.env.JWT_SECRET)
     return res.header('x-auth-token', token).send({id: result, authToken: true})
 })
