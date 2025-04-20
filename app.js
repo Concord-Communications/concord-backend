@@ -4,16 +4,18 @@ import express from 'express'
 import { router as messagesRoutes } from "./routes/messages.js"
 import { router as infoRoutes } from "./routes/info.js"
 import { router as authroutes } from "./routes/auth.js"
+import cors from "cors"
 
 const app = express()
 
 console.log(`environment: ${process.env.NODE_ENV}`);
 
+app.use(cors({
+    origin: "http://localhost:5173",
+}))
 app.use(express.json())
 app.use(helmet())
-if (process.env.NODE_ENV === 'development') {
-    app.use(morgan(':method :status ":url" :remote-addr [:user-agent]'))
-}
+app.use(morgan(':method :status ":url" :remote-addr [:user-agent]'))
 
 // import route files
 app.use('/api/messages', messagesRoutes)

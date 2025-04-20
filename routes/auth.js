@@ -1,8 +1,9 @@
 // intended for /api/auth
-
+import jwt from 'jsonwebtoken'
 import { conn } from '../dbconnecter.js'
 import express from 'express'
 import Joi from "joi"
+import bcrypt from 'bcrypt'
 // import { string } from "joi"
 
 export const router = express.Router()
@@ -16,6 +17,15 @@ function validateUser(user) {
     })
 
     const { error, value } = schema.validate(user)
+    return { error, value }
+}
+
+function validateLogin(req) {
+    const schema = Joi.object({
+        userhandle: Joi.string().min(1).max(50).required(),
+        password: Joi.string().min(8).max(30).required()
+    })
+    const {error, value} = schema.validate(req.body)
     return { error, value }
 }
 
@@ -37,6 +47,39 @@ async function findUserFromHandle(req) {
     return errorfound
 }
 
+router.get('/', async (req, res) => {
+    const { error } = validateLogin(req)
+    if (error) {
+        res.status(500).send("internal server error")
+        console.error(error)
+        return
+    }
+
+    try {
+
+        const [result] = await conn.execute('SELECT password, id, permissions, channels FROM User WHERE handle=? LIMIT 1', [req.body.userhandle])
+
+        if (result == null) {
+            return res.status(404).send("No user with matching handle")
+        }
+        const validpassword = await bcrypt.compare(req.body.password, result[0].password)
+        if(!validpassword) {res.status(401).send('Invalid password'); return}
+
+        const token = jwt.sign({
+            userID: result[0].id,
+            permissions: result[0].permissions,
+            channels: result[0].channels,
+            tokenVersion: 0,
+        }, process.env.JWT_SECRET)
+        res.send(token)
+
+    } catch (error) {
+        res.status(500).send("internal server error")
+        console.error(error)
+        return;
+    }
+})
+
 router.post('/register', async (req, res) => {
     if (!process.env.creating_users_permitted) {
         res.status(401).send("This server requires invites")
@@ -56,20 +99,45 @@ router.post('/register', async (req, res) => {
     }
 
     const result = await createUser(req, res)
-
-    return result ? res.status(200).send("User created successfully")
-                  : res.status(500).send("Error creating user")
+    if (!result) {
+        return res.status(500).send("Internal server error")
+    }
+    // otherwise
+    const details = await findUserByID(result)
+    if (!details) {return res.send({id: result, authToken: false})}
+    const token = jwt.sign({
+        userID: result,
+        permissions: details[0].permissions,
+        channels: JSON.parse(details[0].channels),
+        tokenVersion: 0,
+    }, process.env.JWT_SECRET)
+    return res.header('x-auth-token', token).send({id: result, authToken: true})
 })
 
+async function findUserByID(id) {
+    // THIS FUNCTION IS NOT SANITIZED
+    try {
+        const [user] = await conn.execute('SELECT * FROM User WHERE id=?', [id])
+        return user
+    } catch (error) {
+        return false
+    }
+}
 
 async function createUser(req) {
+
+    const password = req.body.password
+    const salt = await bcrypt.genSalt(10)
+    const hash = await bcrypt.hash(password, salt)
+
+
     try {
         const [result] = await conn.execute(
             "INSERT INTO User (name, handle, description, password, permissions, channels) VALUES (?, ?, ?, ?, 0, '[]')",
-            [req.body.name, req.body.userhandle, req.body.description, req.body.password]
+            [req.body.name, req.body.userhandle, req.body.description, hash]
         )
 
-        return true
+        return result.insertId
     } catch (error) {
         console.error(error)
     }
