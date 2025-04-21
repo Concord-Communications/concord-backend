@@ -8,6 +8,7 @@ import cors from "cors"
 
 const app = express()
 
+console.log("Concord starting up...")
 console.log(`environment: ${process.env.NODE_ENV}`);
 
 app.use(cors({
