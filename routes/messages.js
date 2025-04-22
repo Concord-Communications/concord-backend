@@ -32,7 +32,7 @@ router.get('/:channel/:id', authenticate, async (req, res) => {
 
     try {
         const [result] = await conn.execute(
-            `SELECT Message.*, User.name, User.handle FROM Message JOIN User ON Message.senderid = User.id
+            `SELECT Message.*, User.name, User.handle, User.name_color FROM Message JOIN User ON Message.senderid = User.id
              WHERE message.id >= ? AND message.channelid = ? ORDER BY message.date DESC LIMIT 20`,
             [parseInt(req.params.id), channel]
         )
@@ -47,7 +47,7 @@ router.post('/:channel', authenticate, async (req, res) => {
     // request validation
     // needs a name that is less than 18 characters but is more than 0
 
-    if (!req.user.channels.contains(req.params.channel)) {
+    if (!userChannelPermitted(req.params.channel, req.user.channels)) {
         return res.status(403).send("Not authorized.")
     }
 
@@ -81,6 +81,7 @@ function validateMessage(message) {
     const { error, value } = schema.validate(message)
     return { error, value }
 }
+
 
 function userChannelPermitted(id, array) {
     for (let i = 0; i < array.length; i++) {

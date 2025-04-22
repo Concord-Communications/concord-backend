@@ -65,7 +65,7 @@ router.get('/users/:userid', authenticate, async (req, res) => {
     try {
         const [result] = await conn.execute(
             "SELECT id, name, handle, description, created, verified FROM User WHERE id = ?",
-            [req.params.userid]
+            [parseInt(req.params.userid)]
         )
         res.send(result)
     } catch (error) {

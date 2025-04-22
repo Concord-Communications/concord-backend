@@ -10,6 +10,7 @@ CREATE TABLE User (
                       created DATETIME DEFAULT CURRENT_TIMESTAMP,
                       permissions INT NOT NULL,
                       channels JSON NOT NULL,
+                      name_color CHAR(7) NOT NULL DEFAULT "#00fff7",
                       verified BOOLEAN DEFAULT FALSE,
                       password VARCHAR(255) NOT NULL
 );
