@@ -6,6 +6,7 @@ import { router as infoRoutes } from "./routes/info.js"
 import { router as authroutes } from "./routes/auth.js"
 import cors from "cors"
 
+
 const app = express()
 
 console.log("Concord starting up...")

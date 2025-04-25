@@ -9,12 +9,11 @@ export const router = express.Router();
 
 
 router.get("/latest/:channel", authenticate, async (req, res) => {
-    if (!req.user.channels.contains(req.params.channel)) {
+    if (!userChannelPermitted(parseInt(req.params.channel), req.user.channels)) {
         return res.status(403).send("Not authorized.")
     }
     try {
-        const [result] = await conn.query('SELECT id FROM message ORDER BY date DESC LIMIT 1', (err, results) => {
-        })
+        const [result] = await conn.query('SELECT id FROM message ORDER BY date DESC LIMIT 1')
         res.send(result);
     } catch (error) {
         res.status(500).json("internal server error");
@@ -33,7 +32,7 @@ router.get('/:channel/:id', authenticate, async (req, res) => {
     try {
         const [result] = await conn.execute(
             `SELECT Message.*, User.name, User.handle, User.name_color FROM Message JOIN User ON Message.senderid = User.id
-             WHERE message.id >= ? AND message.channelid = ? ORDER BY message.date DESC LIMIT 20`,
+             WHERE message.id >= ? AND message.channelid = ? ORDER BY message.id DESC LIMIT 20`,
             [parseInt(req.params.id), channel]
         )
         res.send(result)
