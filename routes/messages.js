@@ -4,6 +4,7 @@ import Joi from "joi"
 import express from "express"
 import { conn } from "../dbconnecter.js"
 import {authenticate} from "../middleware/auth-helper.js"
+import socketEvents from "../socketHelper.js";
 
 export const router = express.Router();
 
@@ -64,6 +65,7 @@ router.post('/:channel', authenticate, async (req, res) => {
             'INSERT INTO Message (senderid, content, reactions, channelid) VALUES (?, ?, ?, ?)',
             [senderid, req.body.content, reactions, channel])
         res.send({senderid: req.user.userID, message: req.body.content, reactions: reactions});
+        socketEvents.emit('message', result, "create")
     } catch (error) {
         res.status(500).json("internal server error");
         console.error(error);

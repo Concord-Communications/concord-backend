@@ -4,12 +4,13 @@ import express from 'express'
 import { router as messagesRoutes } from "./routes/messages.js"
 import { router as infoRoutes } from "./routes/info.js"
 import { router as authroutes } from "./routes/auth.js"
+import { serveConcordSocket } from "./socketHelper.js";
 import cors from "cors"
-
 
 const app = express()
 
 console.log("Concord starting up...")
+serveConcordSocket()
 console.log(`environment: ${process.env.NODE_ENV}`);
 
 app.use(cors({
