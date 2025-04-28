@@ -65,7 +65,7 @@ router.post('/:channel', authenticate, async (req, res) => {
             'INSERT INTO Message (senderid, content, reactions, channelid) VALUES (?, ?, ?, ?)',
             [senderid, req.body.content, reactions, channel])
         res.send({senderid: req.user.userID, message: req.body.content, reactions: reactions});
-        socketEvents.emit('message', result, "create")
+        socketEvents.emit('message', result.insertId, "create", channel)
     } catch (error) {
         res.status(500).json("internal server error");
         console.error(error);

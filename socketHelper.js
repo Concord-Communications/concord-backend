@@ -37,9 +37,7 @@ export function serveConcordSocket() {
         console.log(`Broadcasting message`);
         // methods are update, delete, create
         for (let i = 0; i < clients.length; i++) {
-            if (!getUserChannelAuth(clients[i][1].channels, channel)) {
-                continue;
-            }
+            if (!getUserChannelAuth(clients[i][1].channels, channel)) { continue; }
             clients[i][0].send(JSON.stringify({message: message, method: method}))
         }
     })
@@ -47,7 +45,7 @@ export function serveConcordSocket() {
 
 function getUserChannelAuth(channels, id) {
     for (let i = 0; i < channels.length; i++) {
-        if (channels[i] === id) {return true}
+        if (channels[i] == id) {return true}
     }
     return false
 }
