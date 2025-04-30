@@ -17,7 +17,6 @@ export function serveConcordSocket() {
 
     wss.on('connection', (ws) => {
         let self = null;
-        ws.send("This socket requires authentication, please log in")
         ws.once('message', async (msg) => {
             self = handleLogin(ws, msg, clients)
         })
@@ -33,12 +32,12 @@ export function serveConcordSocket() {
         })
     })
 
-    socketEvents.on('message', async (message, method, channel) => {
+    socketEvents.on('message', async (id, method, channel) => {
         console.log(`Broadcasting message`);
         // methods are update, delete, create
         for (let i = 0; i < clients.length; i++) {
             if (!getUserChannelAuth(clients[i][1].channels, channel)) { continue; }
-            clients[i][0].send(JSON.stringify({message: message, method: method}))
+            clients[i][0].send(JSON.stringify({id: id, channel: channel, method: method}))
         }
     })
 }
@@ -54,23 +53,23 @@ async function handleLogin(ws, msg, clients) {
     const loginSchema = Joi.object({
         token: Joi.string().max(255).required()
     })
-
     try {
         msg = msg.toString()
         msg = JSON.parse(msg)
         const { value } = await loginSchema.validate(msg)
-
         try {
             const decoded = jwt.verify(value.token, process.env.JWT_SECRET)
-            ws.send("Authenticated! Welcome!")
+            ws.send(JSON.stringify({error: false, message: "Authenticated! Welcome!"}))
             return clients.push([ws, decoded])
         } catch (e) {
-            ws.send("Unauthorized!")
+            ws.send(JSON.stringify({error: true, message: "Unauthorized!!!"}))
             ws.close()
         }
     } catch (e) {
         ws.send(e.details[0].message)
         ws.close()
     }
+
+
 
 }
