@@ -14,7 +14,7 @@ serveConcordSocket()
 console.log(`environment: ${process.env.NODE_ENV}`);
 
 app.use(cors({
-    origin: "http://localhost:5173",
+    origin: "*",
 }))
 app.use(express.json())
 app.use(helmet())

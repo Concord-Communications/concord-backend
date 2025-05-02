@@ -5,6 +5,20 @@ import {authenticate} from "../middleware/auth-helper.js";
 
 export const router = express.Router()
 
+function userChannelPermitted(id, array) {
+    for (let i = 0; i < array.length; i++) {
+        if (array[i] == id) {
+            return true
+        }
+    }
+    return false
+}
+
+router.get("/channel/permitted/:channel", authenticate, async (req, res) => {
+    const channel = parseInt(req.params.channel);
+    res.send(userChannelPermitted(channel, req.user.channels))
+})
+
 router.get('/channels/:channel', async (req, res) => {
     // send the id of the latest message
     try {

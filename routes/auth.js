@@ -47,11 +47,11 @@ async function findUserFromHandle(req) {
     return errorfound
 }
 
-router.get('/', async (req, res) => {
+router.post('/', async (req, res) => {
+    // This HAS to be a POST endpoint because react is evil and I made my client in it *sob*
     const { error } = validateLogin(req)
     if (error) {
-        res.status(500).send("internal server error")
-        console.error(error)
+        res.status(400).send(error.details[0].message)
         return
     }
 
@@ -108,7 +108,7 @@ router.post('/register', async (req, res) => {
     const token = jwt.sign({
         userID: result,
         permissions: details[0].permissions,
-        channels: JSON.parse(details[0].channels),
+        channels: details[0].channels,
         tokenVersion: 0,
     }, process.env.JWT_SECRET)
     return res.header('x-auth-token', token).send({id: result, authToken: true})
