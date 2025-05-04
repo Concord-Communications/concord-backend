@@ -7,12 +7,14 @@ CREATE TABLE User (
                       name VARCHAR(30) NOT NULL,
                       handle VARCHAR(50) UNIQUE NOT NULL,
                       description TEXT,
-                      created DATETIME DEFAULT CURRENT_TIMESTAMP,
+                      created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                       permissions INT NOT NULL,
                       channels JSON NOT NULL,
                       name_color CHAR(7) NOT NULL DEFAULT "#00fff7",
                       verified BOOLEAN DEFAULT FALSE,
-                      password VARCHAR(255) NOT NULL
+                      password VARCHAR(255) NOT NULL,
+                      last_read_message INT, -- this should have the null allowed
+                      FOREIGN KEY (last_read_message) REFERENCES Message(id)
 );
 
 CREATE TABLE channels (
@@ -26,7 +28,7 @@ CREATE TABLE Message (
                          senderid INT NOT NULL,
                          content TEXT NOT NULL,
                          reactions JSON NOT NULL,
-                         date DATETIME DEFAULT CURRENT_TIMESTAMP,
+                         date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                          channelid INT NOT NULL,
                          FOREIGN KEY (channelid) REFERENCES channels(id) ON DELETE CASCADE,
                          FOREIGN KEY (senderid) REFERENCES User(id) ON DELETE CASCADE
