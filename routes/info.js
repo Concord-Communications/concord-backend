@@ -14,6 +14,7 @@ function userChannelPermitted(id, array) {
     return false
 }
 
+
 router.get("/channel/permitted/:channel", authenticate, async (req, res) => {
     const channel = parseInt(req.params.channel);
     res.send(userChannelPermitted(channel, req.user.channels))
@@ -32,7 +33,7 @@ router.get('/channels/:channel', async (req, res) => {
     }
 })
 
-router.get('/channels', async (req, res) => {
+router.get('/channels', authenticate, async (req, res) => {
     // show all available channels
     try {
         const [result] = await conn.execute('SELECT id, name, description FROM channels')
@@ -86,6 +87,47 @@ router.get('/users/:userid', authenticate, async (req, res) => {
         res.status(500).json("internal server error");
         console.error(error);
         return
+    }
+})
+
+async function getLastRead(req, res, channel, user) {
+    if (!userChannelPermitted(target, req.user.channels)) {return res.status(403).send("you don't have access to this channel")}
+    try {
+        const [result] = await conn.execute("SELECT channelid, lastMessageid FROM UserChannels WHERE userid = ? AND channelid = ?",
+            [user, channel])
+        if (result[0].lastMessageid == null) {
+            return res.status(404).send("no record found")
+        }
+        res.send(result)
+    } catch (e) {
+        return res.status(500).json("internal server error");
+    }
+}
+
+router.get('/me/lastread/:channel', authenticate, async (req, res) => {
+    const target = parseInt(req.params.channel)
+    await getLastRead(req, res, target, req.user.userID)
+})
+
+router.get('/lastread/:userid/:channel', authenticate, async (req, res) => {
+    const target = parseInt(req.params.channel)
+    const user = parseInt(req.params.userid)
+    await getLastRead(req, res, target, user)
+})
+
+router.post('/me/lastread/:channel/:messageID', authenticate, async (req, res) => {
+    const target = parseInt(req.params.channel)
+    const newReadID = parseInt(req.params.messageID)
+    if (!userChannelPermitted(target, req.user.channels)) {return res.status(403).send("you don't have access to this channel")}
+    try {
+        const [result] = await conn.execute("UPDATE UserChannels SET lastMessageID = ? WHERE userid = ? AND channelid = ?",
+            [newReadID, req.user.userID, target])
+        res.send({
+            message: "Updated read time to",
+            value: newReadID
+        })
+    } catch (e) {
+        res.status(500).json("internal server error");
     }
 })
 
