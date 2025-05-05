@@ -89,36 +89,6 @@ router.get('/users/:userid', authenticate, async (req, res) => {
     }
 })
 
-router.get('/readtime/me', authenticate, async (req, res) => {
-    const userid = req.user.id;
-    try {
-        const [result] = await conn.execute(
-            "SELECT last_read_message FROM User WHERE id = ?",
-            [userid]
-        )
-        res.send(result)
-    } catch (e) {
-        res.status(500).json("internal server error");
-        console.error(error)
-        return
-    }
-})
-
-router.post('/readtime/me/:lastreadid', authenticate, async (req, res) => {
-    const userid = req.user.id;
-    try {
-        const [result] = await conn.execute(
-            "UPDATE User SET last_read_message = ? WHERE id = ?",
-            [req.params.lastreadid, userid]
-        )
-        res.send("ok")
-    } catch (e) {
-        res.status(500).json("internal server error");
-        console.error(error)
-        return
-    }
-})
-
 router.get('/me', authenticate, async (req, res) => {
     const userid = req.user.userID
     try {
