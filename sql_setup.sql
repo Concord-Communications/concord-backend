@@ -32,6 +32,18 @@ CREATE TABLE Message (
                          FOREIGN KEY (senderid) REFERENCES User(id) ON DELETE CASCADE
 );
 
+CREATE TABLE UserChannels (
+                         id INT AUTO_INCREMENT PRIMARY KEY,
+                         userid INT NOT NULL,
+                         channelid INT NOT NULL,
+                         lastMessageid INT,
+                         FOREIGN KEY (userid) REFERENCES User(id) ON DELETE CASCADE,
+                         FOREIGN KEY (channelid) REFERENCES channels(id) ON DELETE CASCADE,
+                         FOREIGN KEY (lastMessageid) REFERENCES Message(id)
+);
+
+CREATE INDEX userchannels_user_id ON UserChannels (userid, channelid);
+
 -- INSERT INTO User (id, name, handle, description, permissions, channels, password) VALUES
 --          (0,"[System]", "system", "system message helper", 0, '[]', "");
 CREATE USER IF NOT EXISTS 'KAUS'@'localhost' IDENTIFIED BY 'aip1urm!WOUT';

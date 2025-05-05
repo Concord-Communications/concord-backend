@@ -57,13 +57,18 @@ router.post('/', async (req, res) => {
 
     try {
 
-        const [result] = await conn.execute('SELECT password, id, permissions, channels FROM User WHERE handle=? LIMIT 1', [req.body.userhandle])
+        let [result] = await conn.execute(
+            "SELECT User.password, User.id, User.permissions, GROUP_CONCAT(UserChannels.channelid) AS channels FROM User LEFT JOIN UserChannels ON User.id=UserChannels.userid WHERE User.handle=? GROUP BY User.id",
+            [req.body.userhandle])
 
-        if (result == null) {
+        result[0].channels = result[0].channels ? result[0].channels.split(',').map(Number) : [];
+        if (result[0] == null) {
             return res.status(404).send("No user with matching handle")
         }
         const validpassword = await bcrypt.compare(req.body.password, result[0].password)
         if(!validpassword) {res.status(401).send('Invalid password'); return}
+
+        if (result[0].channels == null) {result[0].channels = []} // it always should be an array
 
         const token = jwt.sign({
             userID: result[0].id,
@@ -117,7 +122,12 @@ router.post('/register', async (req, res) => {
 async function findUserByID(id) {
     // THIS FUNCTION IS NOT SANITIZED
     try {
-        const [user] = await conn.execute('SELECT * FROM User WHERE id=?', [id])
+        let [user] = await conn.execute('SELECT * FROM User WHERE id=?', [id])
+        const [channels] = await conn.execute('SELECT channelid FROM UserChannels WHERE userid = ?', [id])
+        user = {
+            ...user,
+            channels: channels,
+        }
         return user
     } catch (error) {
         return false
@@ -133,7 +143,7 @@ async function createUser(req) {
 
     try {
         const [result] = await conn.execute(
-            "INSERT INTO User (name, handle, description, password, permissions, channels) VALUES (?, ?, ?, ?, 0, '[]')",
+            "INSERT INTO User (name, handle, description, password, permissions) VALUES (?, ?, ?, ?, 0)",
             [req.body.name, req.body.userhandle, req.body.description, hash]
         )
 
