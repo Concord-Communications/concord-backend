@@ -37,7 +37,9 @@ router.get('/channels', authenticate, async (req, res) => {
     // show all available channels
     try {
         const [result] = await conn.execute(
-            'SELECT channels.*, UserChannels.lastMessageid FROM channels LEFT JOIN UserChannels ON UserChannels.channelid=channels.id WHERE UserChannels.userid=?',
+            `SELECT channels.*, UserChannels.lastMessageid
+             FROM channels LEFT JOIN UserChannels ON UserChannels.channelid=channels.id
+             WHERE UserChannels.userid=?`,
             [parseInt(req.user.userID)])
         res.send(result)
     } catch (err) {
@@ -93,7 +95,7 @@ router.get('/users/:userid', authenticate, async (req, res) => {
 })
 
 async function getLastRead(req, res, channel, user) {
-    if (!userChannelPermitted(target, req.user.channels)) {return res.status(403).send("you don't have access to this channel")}
+    if (!userChannelPermitted(channel, req.user.channels)) {return res.status(403).send("you don't have access to this channel")}
     try {
         const [result] = await conn.execute("SELECT channelid, lastMessageid FROM UserChannels WHERE userid = ? AND channelid = ?",
             [user, channel])
@@ -122,13 +124,14 @@ router.post('/me/lastread/:channel/:messageID', authenticate, async (req, res) =
     const newReadID = parseInt(req.params.messageID)
     if (!userChannelPermitted(target, req.user.channels)) {return res.status(403).send("you don't have access to this channel")}
     try {
-        const [result] = await conn.execute("UPDATE UserChannels SET lastMessageID = ? WHERE userid = ? AND channelid = ?",
+        const [result] = await conn.execute("UPDATE UserChannels SET lastMessageid = ? WHERE userid = ? AND channelid = ?",
             [newReadID, req.user.userID, target])
         res.send({
             message: "Updated read time to",
             value: newReadID
         })
     } catch (e) {
+        // if the id doesn't exist then it will crash
         res.status(500).json("internal server error");
     }
 })

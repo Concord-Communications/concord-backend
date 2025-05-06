@@ -10,11 +10,13 @@ export const router = express.Router();
 
 
 router.get("/latest/:channel", authenticate, async (req, res) => {
+    const target=parseInt(req.params.channel)
     if (!userChannelPermitted(parseInt(req.params.channel), req.user.channels)) {
         return res.status(403).send("Not authorized.")
     }
     try {
-        const [result] = await conn.query('SELECT id FROM message ORDER BY date DESC LIMIT 1')
+        const [result] = await conn.query('SELECT id FROM message WHERE channelid=? ORDER BY id DESC LIMIT 1',
+            [target])
         res.send(result);
     } catch (error) {
         res.status(500).json("internal server error");
