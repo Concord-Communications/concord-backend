@@ -36,7 +36,9 @@ router.get('/channels/:channel', async (req, res) => {
 router.get('/channels', authenticate, async (req, res) => {
     // show all available channels
     try {
-        const [result] = await conn.execute('SELECT id, name, description FROM channels')
+        const [result] = await conn.execute(
+            'SELECT channels.*, UserChannels.lastMessageid FROM channels LEFT JOIN UserChannels ON UserChannels.channelid=channels.id WHERE UserChannels.userid=?',
+            [parseInt(req.user.userID)])
         res.send(result)
     } catch (err) {
         res.status(500).send("internal server error")
