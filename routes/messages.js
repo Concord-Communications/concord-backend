@@ -31,14 +31,33 @@ router.get('/:channel/:id', authenticate, async (req, res) => {
         return res.status(403).send("Not authorized.")
     }
 
-    if (parseInt(req.query.signleOnly) === 1) {
+    if (req.query.ignore !== 1) {
+        const newest_message = parseInt(req.params.id) - 20
+        try {
+            const [result] = await conn.execute("SELECT lastMessageid FROM UserChannels WHERE userid=? AND channelid=?",
+                [req.user.userID, channel])
+
+            if(!(result[0].lastMessageid > newest_message)) {
+                await conn.execute(
+                    "UPDATE UserChannels SET lastMessageid=? WHERE userid=? AND channelid=?",
+                    [newest_message, req.user.userID, channel]
+                )
+            }
+
+        } catch (e) {
+            console.error(e)
+            console.warn("ALERT! api/messages/:channel/:id isn't handling read messages for some reason!")
+        }
+    }
+
+    if (parseInt(req.query.singleOnly) === 1) {
         try {
             const [result] = await conn.execute(
                 `SELECT Message.*, User.name, User.handle, User.name_color FROM Message JOIN User ON Message.senderid = User.id
              WHERE message.id = ? AND message.channelid = ? ORDER BY message.id DESC LIMIT 1`,
                 [parseInt(req.params.id), channel]
             )
-            res.send(result)
+            return res.send(result)
         } catch (error) {
             res.status(500).json("internal server error");
             console.error(error);

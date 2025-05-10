@@ -12,6 +12,7 @@ CREATE TABLE User (
                       channels JSON NOT NULL,
                       name_color CHAR(7) NOT NULL DEFAULT "#00fff7",
                       verified BOOLEAN DEFAULT FALSE,
+                      isBot BOOLEAN DEFAULT FALSE NOT NULL,
                       password VARCHAR(255) NOT NULL
 );
 
@@ -38,8 +39,8 @@ CREATE TABLE UserChannels (
                          channelid INT NOT NULL,
                          lastMessageid INT,
                          FOREIGN KEY (userid) REFERENCES User(id) ON DELETE CASCADE,
-                         FOREIGN KEY (channelid) REFERENCES channels(id) ON DELETE CASCADE,
-                         FOREIGN KEY (lastMessageid) REFERENCES Message(id)
+                         FOREIGN KEY (channelid) REFERENCES channels(id) ON DELETE CASCADE
+                         -- DON'T ADD A FOREIGN KEY CONSTRAINT TO MESSAGE
 );
 
 CREATE INDEX userchannels_user_id ON UserChannels (userid, channelid);

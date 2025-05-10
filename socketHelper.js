@@ -37,7 +37,7 @@ export function serveConcordSocket() {
         // methods are update, delete, create
         for (let i = 0; i < clients.length; i++) {
             if (!getUserChannelAuth(clients[i][1].channels, channel)) { continue; }
-            clients[i][0].send(JSON.stringify({id: id, channel: channel, method: method}))
+            clients[i][0].send(JSON.stringify({id: id, channel: channel, method: method, type: "new_message"}))
         }
     })
 }
