@@ -1,3 +1,7 @@
+-- This file is used for a developer to set up the database manually
+-- It is not used for the Docker setup
+
+
 CREATE DATABASE termichat;
 USE termichat;
 
@@ -13,7 +17,8 @@ CREATE TABLE User (
                       name_color CHAR(7) NOT NULL DEFAULT "#00fff7",
                       verified BOOLEAN DEFAULT FALSE,
                       isBot BOOLEAN DEFAULT FALSE NOT NULL,
-                      password VARCHAR(255) NOT NULL
+                      password VARCHAR(255) NOT NULL,
+                      global_permissions BINARY(2) NOT NULL DEFAULT (0x0000)
 );
 
 CREATE TABLE channels (

@@ -1,0 +1,59 @@
+# Comments are provided throughout this file to help you get started.
+# If you need more help, visit the Docker Compose reference guide at
+# https://docs.docker.com/go/compose-spec-reference/
+
+# Here the instructions define your application as a service called "server".
+# This service is built from the Dockerfile in the current directory.
+# You can add other services your application may depend on here, such as a
+# database or a cache. For examples, see the Awesome Compose repository:
+# https://github.com/docker/awesome-compose
+services:
+  database:
+    image: mysql:5.7
+    platform: linux/amd64
+    container_name: concord-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: "your_password_here"
+      MYSQL_DATABASE: "termichat"
+      MYSQL_USER: "KAUS"
+      MYSQL_PASSWORD: "iW4antAbetterPassword"
+    volumes:
+      - db_data:/var/lib/mysql:delegated
+      - ./sql_setup.sql:/docker-entrypoint-initdb.d/sql_setup.sql
+    ports:
+      - "3307:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$$MYSQL_ROOT_PASSWORD"]
+      retries: 15
+      interval: 10s
+      timeout: 60s
+      start_period: 60s
+  concord:
+    container_name: "concord_chat"
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      database:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      DB_HOST: database
+      DB_PORT: 3306
+      DB_NAME: "termichat"
+      DB_PASSWORD: "iW4antAbetterPassword"
+      DB_USER: "KAUS"
+      JWT_SECRET: "some random string THIS MUST BE CHANGED!"
+    ports:
+      - 8080:8080
+      - 8081:8081
+    expose:
+      - 8080
+      - 8081
+    restart: unless-stopped
+volumes:
+  db_data:
+networks:
+  concord-docker-network:
+    name: concord-docker-network
