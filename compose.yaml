@@ -20,11 +20,14 @@ services:
       MYSQL_PASSWORD: "iW4antAbetterPassword"
     volumes:
       - db_data:/var/lib/mysql:delegated
-      - ./sql_setup.sql:/docker-entrypoint-initdb.d/sql_setup.sql
+      - ./sql_setup.sql:/docker-entrypoint-initdb.d/01-schema.sql
+      - ./init-db.sql:/docker-entrypoint-initdb.d/02-permissions.sql
     ports:
       - "3307:3306"
+    networks:
+      - concord-docker-network
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$$MYSQL_ROOT_PASSWORD"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pyour_password_here"]
       retries: 15
       interval: 10s
       timeout: 60s
@@ -51,6 +54,8 @@ services:
     expose:
       - 8080
       - 8081
+    networks:
+      - concord-docker-network
     restart: unless-stopped
 volumes:
   db_data:
