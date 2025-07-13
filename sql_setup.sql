@@ -50,10 +50,4 @@ CREATE TABLE UserChannels (
 
 CREATE INDEX userchannels_user_id ON UserChannels (userid, channelid);
 
--- INSERT INTO User (id, name, handle, description, permissions, channels, password) VALUES
---          (0,"[System]", "system", "system message helper", 0, '[]', "");
-CREATE USER IF NOT EXISTS 'KAUS'@'localhost' IDENTIFIED BY 'aip1urm!WOUT';
-GRANT INSERT, UPDATE, DELETE, SELECT on termichat.* TO 'KAUS'@'localhost'; -- WITH GRANT OPTION;
-
-FLUSH PRIVILEGES;
 

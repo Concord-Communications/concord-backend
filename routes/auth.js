@@ -47,6 +47,7 @@ async function findUserFromHandle(req) {
     return errorfound
 }
 
+// Log in endpoint
 router.post('/', async (req, res) => {
     // This HAS to be a POST endpoint because react is evil and I made my client in it *sob*
     const { error } = validateLogin(req)
@@ -85,8 +86,36 @@ router.post('/', async (req, res) => {
     }
 })
 
+// Register endpoint
+// this is a hack to make it so the first registration is allowed so admin don't have to 
+// do cursed things to create the first (admin) user
+let isFirstAuth = true 
+
 router.post('/register', async (req, res) => {
-    if (!process.env.creating_users_permitted) {
+    if (isFirstAuth) {
+      try {
+            const [rows] = await conn.execute('SELECT COUNT(*) as count FROM User')
+            if (rows[0].count > 0) {
+                isFirstAuth = false // if there are users, then this is not the first auth
+                console.log("First auth check returned false")
+                console.info("this prevents additional users from being created without an invite")
+            } else {
+                // if there are no users, we need to assume this is the owner creating an account
+                console.warn("First user check returned true! Allowing registration without invite")
+                console.info("This is the first user created, we assume this is the owner creating an admin account")
+
+                // don't change isFirstAuth to false, in case there is an issue with the creation
+                // this will make it so it has to check one more time.
+            }
+        } catch (error) {
+            console.error(`🧙 You have an error: ${error.message}`)
+            return res.status(500).send("Internal server error")
+        }
+
+    }
+
+    if (!process.env.creating_users_permitted && !isFirstAuth) { // see above logic for first auth
+
         res.status(401).send("This server requires invites")
         return
     }
@@ -104,6 +133,15 @@ router.post('/register', async (req, res) => {
     }
 
     const result = await createUser(req, res)
+
+    // if the user is the first user created we give them admin
+    // this makes (in theory) the owner admin
+    if (isFirstAuth) {
+        result[0].permissions = 255
+        console.warn("Admin user created! This is the first user created, we assume this is the owner creating an admin account. If this isn't the case, please change the permissions manually in the database. userid: " + result[0].id
+        )
+    }
+
     if (!result) {
         return res.status(500).send("Internal server error")
     }
