@@ -1,8 +1,8 @@
 -- This file is used for a developer to set up the database manually
 -- It is not used for the Docker setup
 
-
-CREATE DATABASE termichat;
+-- When running in Docker, the database is already created by MYSQL_DATABASE env var
+-- So we just need to use it
 USE termichat;
 
 
@@ -18,7 +18,7 @@ CREATE TABLE User (
                       verified BOOLEAN DEFAULT FALSE,
                       isBot BOOLEAN DEFAULT FALSE NOT NULL,
                       password VARCHAR(255) NOT NULL,
-                      global_permissions BINARY(2) NOT NULL DEFAULT (0x0000)
+                      global_permissions BINARY(2) NOT NULL DEFAULT 0x0000
 );
 
 CREATE TABLE channels (

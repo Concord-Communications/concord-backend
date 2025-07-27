@@ -20,8 +20,8 @@ services:
       MYSQL_PASSWORD: "iW4antAbetterPassword"
     volumes:
       - db_data:/var/lib/mysql:delegated
-      - ./sql_setup.sql:/docker-entrypoint-initdb.d/01-schema.sql
-      - ./init-db.sql:/docker-entrypoint-initdb.d/02-permissions.sql
+      - ./schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+      - ./init.sql:/docker-entrypoint-initdb.d/02-init.sql
     ports:
       - "3307:3306"
     networks:
