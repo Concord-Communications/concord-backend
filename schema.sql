@@ -13,13 +13,14 @@ CREATE TABLE User (
                       description TEXT,
                       created DATETIME DEFAULT CURRENT_TIMESTAMP,
                       permissions INT NOT NULL,
-                      channels JSON NOT NULL,
                       name_color CHAR(7) NOT NULL DEFAULT "#00fff7",
                       verified BOOLEAN DEFAULT FALSE,
                       isBot BOOLEAN DEFAULT FALSE NOT NULL,
                       password VARCHAR(255) NOT NULL,
                       global_permissions BINARY(2) NOT NULL DEFAULT 0x0000
 );
+
+--                       channels JSON NOT NULL,
 
 CREATE TABLE channels (
                           id INTEGER PRIMARY KEY AUTO_INCREMENT,

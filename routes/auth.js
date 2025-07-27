@@ -137,7 +137,7 @@ router.post('/register', async (req, res) => {
     // if the user is the first user created we give them admin
     // this makes (in theory) the owner admin
     if (isFirstAuth) {
-        result[0].permissions = 255
+        //result[0].permissions = 255
         console.warn("Admin user created! This is the first user created, we assume this is the owner creating an admin account. If this isn't the case, please change the permissions manually in the database. userid: " + result[0].id
         )
     }
