@@ -14,10 +14,10 @@ services:
     container_name: concord-mysql
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: "your_password_here"
-      MYSQL_DATABASE: "termichat"
-      MYSQL_USER: "KAUS"
-      MYSQL_PASSWORD: "iW4antAbetterPassword"
+      MYSQL_ROOT_PASSWORD: "your_password_here" # This needs to be changed
+      MYSQL_DATABASE: "termichat" # the app used to be called termichat
+      MYSQL_USER: "KAUS" # This needs to be changed
+      MYSQL_PASSWORD: "iW4antAbetterPassword" # This needs to be changed
     volumes:
       - db_data:/var/lib/mysql:delegated
       - ./schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
@@ -27,7 +27,7 @@ services:
     networks:
       - concord-docker-network
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pyour_password_here"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pyour_password_here"] # This needs to be changed
       retries: 15
       interval: 10s
       timeout: 60s
@@ -45,9 +45,9 @@ services:
       DB_HOST: database
       DB_PORT: 3306
       DB_NAME: "termichat"
-      DB_PASSWORD: "iW4antAbetterPassword"
-      DB_USER: "KAUS"
-      JWT_SECRET: "some random string THIS MUST BE CHANGED!"
+      DB_PASSWORD: "iW4antAbetterPassword" # This needs to be changed
+      DB_USER: "KAUS" # random name that I found
+      JWT_SECRET: "some random string THIS MUST BE CHANGED!" # This needs to be changed
     ports:
       - 8080:8080
       - 8081:8081
