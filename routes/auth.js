@@ -95,8 +95,8 @@ router.post('/register', async (req, res) => {
     if (isFirstAuth) {
       try {
             const [rows] = await conn.execute('SELECT COUNT(*) as count FROM User')
-            if (rows[0].count > 0) {
-                isFirstAuth = false // if there are users, then this is not the first auth
+            if (rows[0].count > 1) { // there is one "system" user created at startup
+                isFirstAuth = false // if there are users (other than the "system"), then this is not the first auth
                 console.log("First auth check returned false")
                 console.info("this prevents additional users from being created without an invite")
             } else {
@@ -142,7 +142,8 @@ router.post('/register', async (req, res) => {
         console.warn("Admin user created! This is the first user created, we assume this is the owner creating an admin account. If this isn't the case, please change the permissions manually in the database. userid: " + result
         )
         try {
-            await conn.execute('INSERT INTO UserChannels (userid, channelid) VALUES (?, ?)', [result, 0])
+            // add the owner to #general
+            await conn.execute('INSERT INTO UserChannels (userid, channelid) VALUES (?, ?)', [result, 1]) // 1 is the general channel id
             console.info("added first user (assumed owner) to general channel")
         } catch (error) {
             console.error(`🧙 You have an error: ${error.message}`)
