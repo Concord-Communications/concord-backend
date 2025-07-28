@@ -96,8 +96,8 @@ router.post('/:channel', authenticate, async (req, res) => {
     const senderid = parseInt(req.user.userID)
     try {
         const [result] = await conn.execute(
-            'INSERT INTO Message (senderid, content, reactions, channelid) VALUES (?, ?, ?, ?)',
-            [senderid, req.body.content, reactions, channel])
+            'INSERT INTO Message (senderid, content, reactions, channelid, encrypted) VALUES (?, ?, ?, ?, ?)',
+            [senderid, req.body.content, reactions, channel, req.body.encrypted])
         res.send({senderid: req.user.userID, message: req.body.content, reactions: reactions});
         socketEvents.emit('message', result.insertId, "create", channel)
     } catch (error) {
@@ -112,6 +112,7 @@ router.post('/:channel', authenticate, async (req, res) => {
 function validateMessage(message) {
     const schema = Joi.object({
         content: Joi.string().required(),
+        encrypted: Joi.boolean().required(),
     })
     const { error, value } = schema.validate(message)
     return { error, value }

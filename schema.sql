@@ -51,4 +51,7 @@ CREATE TABLE UserChannels (
 
 CREATE INDEX userchannels_user_id ON UserChannels (userid, channelid);
 
-
+-- default setup for channels so the user has something to play with
+INSERT INTO channels (id, name description) VALUE (0, "general", "*general* discussions");
+INSERT INTO User (id, name, handle, description, permissions, password) VALUE (0, "system", "system", "system user", 0, "nope"); -- password is impossible to get because it is hashed normally
+INSERT INTO UserChannels (userid, channelid) VALUE (0, 0); -- system user is in the general channel

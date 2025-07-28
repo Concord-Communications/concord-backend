@@ -133,18 +133,25 @@ router.post('/register', async (req, res) => {
     }
 
     const result = await createUser(req, res)
-
-    // if the user is the first user created we give them admin
-    // this makes (in theory) the owner admin
-    if (isFirstAuth) {
-        //result[0].permissions = 255
-        console.warn("Admin user created! This is the first user created, we assume this is the owner creating an admin account. If this isn't the case, please change the permissions manually in the database. userid: " + result[0].id
-        )
-    }
-
     if (!result) {
         return res.status(500).send("Internal server error")
     }
+    // if the user is the first user created we give them admin
+    // this makes (in theory) the owner admin
+    if (isFirstAuth) {
+        console.warn("Admin user created! This is the first user created, we assume this is the owner creating an admin account. If this isn't the case, please change the permissions manually in the database. userid: " + result
+        )
+        try {
+            await conn.execute('INSERT INTO UserChannels (userid, channelid) VALUES (?, ?)', [result, 0])
+            console.info("added first user (assumed owner) to general channel")
+        } catch (error) {
+            console.error(`🧙 You have an error: ${error.message}`)
+            console.error("Failed to add first user (assumed owner) to general channel, please add them manually")
+        }
+        
+    }
+
+    
     // otherwise
     const details = await findUserByID(result)
     if (!details) {return res.send({id: result, authToken: false})}
