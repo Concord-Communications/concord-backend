@@ -15,7 +15,7 @@ router.get("/latest/:channel", authenticate, async (req, res) => {
         return res.status(403).send("Not authorized.")
     }
     try {
-        const [result] = await conn.query('SELECT id FROM message WHERE channelid=? ORDER BY id DESC LIMIT 1',
+        const [result] = await conn.query('SELECT id FROM Message WHERE channelid=? ORDER BY id DESC LIMIT 1',
             [target])
         res.send(result);
     } catch (error) {
@@ -54,7 +54,7 @@ router.get('/:channel/:id', authenticate, async (req, res) => {
         try {
             const [result] = await conn.execute(
                 `SELECT Message.*, User.name, User.handle, User.name_color FROM Message JOIN User ON Message.senderid = User.id
-             WHERE message.id = ? AND message.channelid = ? ORDER BY message.id DESC LIMIT 1`,
+             WHERE Message.id = ? AND Message.channelid = ? ORDER BY Message.id DESC LIMIT 1`,
                 [parseInt(req.params.id), channel]
             )
             return res.send(result)
@@ -67,7 +67,7 @@ router.get('/:channel/:id', authenticate, async (req, res) => {
     try {
         const [result] = await conn.execute(
             `SELECT Message.*, User.name, User.handle, User.name_color FROM Message JOIN User ON Message.senderid = User.id
-             WHERE message.id <= ? AND message.channelid = ? ORDER BY message.id DESC LIMIT 20`,
+             WHERE Message.id <= ? AND Message.channelid = ? ORDER BY Message.id DESC LIMIT 20`,
             [parseInt(req.params.id), channel]
         )
         res.send(result)
