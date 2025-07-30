@@ -1,10 +1,11 @@
-// intended for /api/auth
+// router for /api/auth
 import jwt from 'jsonwebtoken'
 import { conn } from '../dbconnecter.js'
 import express from 'express'
 import Joi from "joi"
 import bcrypt from 'bcrypt'
-// import { string } from "joi"
+
+jwt_expiresIn = "7d" // sign jwts for this long
 
 export const router = express.Router()
 
@@ -31,7 +32,6 @@ function validateLogin(req) {
 
 async function findUserFromHandle(req) {
     let errorfound = false
-
     try {
         const [rows] = await conn.execute(
             'SELECT 1 FROM User WHERE handle = ?',
@@ -49,7 +49,6 @@ async function findUserFromHandle(req) {
 
 // Log in endpoint
 router.post('/', async (req, res) => {
-    // This HAS to be a POST endpoint because react is evil and I made my client in it *sob*
     const { error } = validateLogin(req)
     if (error) {
         res.status(400).send(error.details[0].message)
@@ -57,15 +56,19 @@ router.post('/', async (req, res) => {
     }
 
     try {
-
+        
+        // check if user exists, and if they do, fetch their records to put into the JWT
         let [result] = await conn.execute(
             "SELECT User.password, User.id, User.permissions, GROUP_CONCAT(UserChannels.channelid) AS channels FROM User LEFT JOIN UserChannels ON User.id=UserChannels.userid WHERE User.handle=? GROUP BY User.id",
             [req.body.userhandle])
-
+        
+        // cleanup the user's channels
         result[0].channels = result[0].channels ? result[0].channels.split(',').map(Number) : [];
         if (result[0] == null) {
             return res.status(404).send("No user with matching handle")
         }
+
+        // check password
         const validpassword = await bcrypt.compare(req.body.password, result[0].password)
         if(!validpassword) {res.status(401).send('Invalid password'); return}
 
@@ -76,7 +79,7 @@ router.post('/', async (req, res) => {
             permissions: result[0].permissions,
             channels: result[0].channels,
             tokenVersion: 0,
-        }, process.env.JWT_SECRET)
+        }, process.env.JWT_SECRET, { expiresIn: jwt_expiresIn}) // make the token expire in the amount of time specified in jwt_expiresIn
         res.send(token)
 
     } catch (error) {
@@ -92,8 +95,15 @@ router.post('/', async (req, res) => {
 let isFirstAuth = true 
 
 router.post('/register', async (req, res) => {
+    /*
+        isFirstAuth (above) is a feature so that docker users can create their first user (assumed owner) without an invite.
+        This is to make it so less tech-savvy users can get started without needing cursed docker configurations.
+        This is not a security feature, it is a convenience feature.
+    */
     if (isFirstAuth) {
       try {
+            // first see if there are more than one user in the database
+            // there is always a "system" user from schema.sql
             const [rows] = await conn.execute('SELECT COUNT(*) as count FROM User')
             if (rows[0].count > 1) { // there is one "system" user created at startup
                 isFirstAuth = false // if there are users (other than the "system"), then this is not the first auth
@@ -115,24 +125,23 @@ router.post('/register', async (req, res) => {
     }
 
     if (!process.env.creating_users_permitted && !isFirstAuth) { // see above logic for first auth
-
-        res.status(401).send("This server requires invites")
-        return
+        return res.status(403).send("This server requires invites")
     }
 
-    const { error } = validateUser(req.body)
+    const { error } = validateUser(req.body) 
 
     if (error) {
         return res.status(400).send(error.details[0].message)
     }
 
+    // see if a user with the same handle already exists
     const errorFound = await findUserFromHandle(req, res)
 
     if (errorFound) {
         return res.status(409).send("User already exists")
     }
 
-    const result = await createUser(req, res)
+    const result = await createUser(req, res) // attempt creating a user
     if (!result) {
         return res.status(500).send("Internal server error")
     }
@@ -142,7 +151,7 @@ router.post('/register', async (req, res) => {
         console.warn("Admin user created! This is the first user created, we assume this is the owner creating an admin account. If this isn't the case, please change the permissions manually in the database. userid: " + result
         )
         try {
-            // add the owner to #general
+            // add the assumed owner to #general
             await conn.execute('INSERT INTO UserChannels (userid, channelid) VALUES (?, ?)', [result, 1]) // 1 is the general channel id
             console.info("added first user (assumed owner) to general channel")
         } catch (error) {
@@ -151,22 +160,22 @@ router.post('/register', async (req, res) => {
         }
         
     }
-
     
-    // otherwise
+    // get the user details and create a JWT if possible
     const details = await findUserByID(result)
-    if (!details) {return res.send({id: result, authToken: false})}
+    if (!details) {return res.send({id: result, authToken: false})} // if there was an issue getting the details at least return the user id
     const token = jwt.sign({
         userID: result,
         permissions: details[0].permissions,
         channels: details[0].channels,
         tokenVersion: 0,
     }, process.env.JWT_SECRET)
-    return res.header('x-auth-token', token).send({id: result, authToken: true})
+    return res.header('x-auth-token', token).send({id: result, authToken: true}) // sends the JWT in the header as x-auth-token
 })
 
 async function findUserByID(id) {
-    // THIS FUNCTION IS NOT SANITIZED
+    // this isn't sanitized, don't send it to the client! 
+    // it contains credentials
     try {
         let [user] = await conn.execute('SELECT * FROM User WHERE id=?', [id])
         const [channels] = await conn.execute('SELECT channelid FROM UserChannels WHERE userid = ?', [id])
@@ -182,12 +191,14 @@ async function findUserByID(id) {
 
 async function createUser(req) {
 
+    // hash the password
     const password = req.body.password
     const salt = await bcrypt.genSalt(10)
     const hash = await bcrypt.hash(password, salt)
 
 
     try {
+        // create a record and return the id
         const [result] = await conn.execute(
             "INSERT INTO User (name, handle, description, password, permissions) VALUES (?, ?, ?, ?, 0)",
             [req.body.name, req.body.userhandle, req.body.description, hash]

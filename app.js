@@ -7,14 +7,14 @@ import { router as authroutes } from "./routes/auth.js"
 import { serveConcordSocket } from "./socketHelper.js";
 import cors from "cors"
 
-const app = express()
+const app = express() // using express for http[s?] REST API
 
 console.log("Concord starting up...")
-serveConcordSocket()
+serveConcordSocket() // for live updates
 console.log(`environment: ${process.env.NODE_ENV}`);
 
 app.use(cors({
-    origin: "*",
+    origin: "*", 
 }))
 app.use(express.json())
 app.use(helmet())
@@ -30,8 +30,3 @@ const port = process.env.PORT || 8080;
 app.listen(port, () => {
     console.log(`Server started on port ${port}...`)
 })
-
-
-
-
-

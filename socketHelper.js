@@ -3,6 +3,7 @@ import events from 'events'
 import jwt from 'jsonwebtoken'
 import Joi from 'joi'
 
+// eventemmitter so socket can notify clients of new messages
 const socketEvents = new events.EventEmitter();
 export default socketEvents;
 
@@ -17,6 +18,8 @@ export function serveConcordSocket() {
 
     wss.on('connection', (ws) => {
         let self = null;
+        // have the client authenticate
+        // I don't my socket abilities very much, so currently the client is only allowed to send that authentication message
         ws.once('message', async (msg) => {
             self = handleLogin(ws, msg, clients)
         })
@@ -25,18 +28,19 @@ export function serveConcordSocket() {
             ws.close()
         })
         ws.on('close', () => {
-            if (self === null) {
-                return console.warn("Client closed without authentication!")
-            }
             clients.splice(self, 1)
         })
     })
-
+    
+    /*
+         when the server receives a message, it will emmit this event, the socket should broadcast it to all clients who have access to the channel
+    */
     socketEvents.on('message', async (id, method, channel) => {
         console.log(`Broadcasting message`);
         // methods are update, delete, create
+        //TODO: make this more efficient, it's currently O(n^2) yay for nested loops
         for (let i = 0; i < clients.length; i++) {
-            if (!getUserChannelAuth(clients[i][1].channels, channel)) { continue; }
+            if (!getUserChannelAuth(clients[i][1].channels, channel)) { continue; } // see if the user has access to this channel
             clients[i][0].send(JSON.stringify({id: id, channel: channel, method: method, type: "new_message"}))
         }
     })
@@ -69,7 +73,4 @@ async function handleLogin(ws, msg, clients) {
         ws.send(e.details[0].message)
         ws.close()
     }
-
-
-
 }

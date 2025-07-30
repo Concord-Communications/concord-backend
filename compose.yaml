@@ -1,12 +1,3 @@
-# Comments are provided throughout this file to help you get started.
-# If you need more help, visit the Docker Compose reference guide at
-# https://docs.docker.com/go/compose-spec-reference/
-
-# Here the instructions define your application as a service called "server".
-# This service is built from the Dockerfile in the current directory.
-# You can add other services your application may depend on here, such as a
-# database or a cache. For examples, see the Awesome Compose repository:
-# https://github.com/docker/awesome-compose
 services:
   database:
     image: mysql:5.7
@@ -16,7 +7,7 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: "your_password_here" # This needs to be changed
       MYSQL_DATABASE: "termichat" # the app used to be called termichat
-      MYSQL_USER: "KAUS" # This needs to be changed
+      MYSQL_USER: "Concord_user"
       MYSQL_PASSWORD: "iW4antAbetterPassword" # This needs to be changed
     volumes:
       - db_data:/var/lib/mysql:delegated
@@ -46,7 +37,7 @@ services:
       DB_PORT: 3306
       DB_NAME: "termichat"
       DB_PASSWORD: "iW4antAbetterPassword" # This needs to be changed
-      DB_USER: "KAUS" # random name that I found
+      DB_USER: "Concord_user" 
       JWT_SECRET: "some random string THIS MUST BE CHANGED!" # This needs to be changed
     ports:
       - 8080:8080

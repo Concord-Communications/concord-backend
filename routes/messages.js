@@ -8,7 +8,8 @@ import socketEvents from "../socketHelper.js";
 
 export const router = express.Router();
 
-
+// get the latest id of the message for a channel
+// this is used to query for new messages
 router.get("/latest/:channel", authenticate, async (req, res) => {
     const target=parseInt(req.params.channel)
     if (!userChannelPermitted(parseInt(req.params.channel), req.user.channels)) {
@@ -24,6 +25,7 @@ router.get("/latest/:channel", authenticate, async (req, res) => {
     }
 })
 
+// get the latest read message id for a channel for the current user 
 router.get('/:channel/:id', authenticate, async (req, res) => {
     // channel and then messages after that specified id
     const channel = parseInt(req.params.channel);
@@ -77,6 +79,7 @@ router.get('/:channel/:id', authenticate, async (req, res) => {
     }
 })
 
+// post a new message to a specified channel
 router.post('/:channel', authenticate, async (req, res) => {
     // request validation
     // needs a name that is less than 18 characters but is more than 0
@@ -127,5 +130,3 @@ function userChannelPermitted(id, array) {
     }
     return false
 }
-
-// module.exports = router;

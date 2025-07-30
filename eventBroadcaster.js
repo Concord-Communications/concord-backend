@@ -2,5 +2,3 @@
 import events from 'events'
 class UserEvents extends events.EventEmitter {}
 export const userevents = new UserEvents();
-
-// module.exports = userevents

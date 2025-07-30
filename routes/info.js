@@ -1,4 +1,4 @@
-// This file is intended to be used for the "/api/info/*" route
+// this is the router for "/api/info/*" 
 import express from 'express'
 import { conn } from '../dbconnecter.js'
 import {authenticate} from "../middleware/auth-helper.js";
@@ -20,6 +20,7 @@ router.get("/channel/permitted/:channel", authenticate, async (req, res) => {
     res.send(userChannelPermitted(channel, req.user.channels))
 })
 
+// get the latest message id in a channel
 router.get('/channels/:channel', async (req, res) => {
     // send the id of the latest message
     try {
@@ -136,6 +137,7 @@ router.post('/me/lastread/:channel/:messageID', authenticate, async (req, res) =
     }
 })
 
+// get the current user info
 router.get('/me', authenticate, async (req, res) => {
     const userid = req.user.userID
     try {
@@ -149,6 +151,3 @@ router.get('/me', authenticate, async (req, res) => {
         return
     }
 })
-
-
-// module.exports = router;
