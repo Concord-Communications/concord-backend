@@ -5,7 +5,7 @@ import express from 'express'
 import Joi from "joi"
 import bcrypt from 'bcrypt'
 
-jwt_expiresIn = "7d" // sign jwts for this long
+const jwt_expiresIn = "7d" // sign jwts for this long
 
 export const router = express.Router()
 
@@ -79,7 +79,7 @@ router.post('/', async (req, res) => {
             permissions: result[0].permissions,
             channels: result[0].channels,
             tokenVersion: 0,
-        }, process.env.JWT_SECRET, { expiresIn: jwt_expiresIn}) // make the token expire in the amount of time specified in jwt_expiresIn
+        }, process.env.JWT_SECRET, { expiresIn: jwt_expiresIn }) // make the token expire in the amount of time specified in jwt_expiresIn
         res.send(token)
 
     } catch (error) {

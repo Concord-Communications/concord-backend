@@ -1,5 +1,6 @@
-> [!IMPORTANT]
-> this code is experimental and might not even run on your machine
+> [!IMPORTANT] Note:
+> There is no webui within this repo, one will be provided in later versions.
+
 
 # installation
 > This app assumes you have a basic knowledge of the terminal, but should be concise
