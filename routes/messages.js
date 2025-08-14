@@ -128,7 +128,7 @@ function validateMessage(message) {
     const schema = Joi.object({
         content: Joi.string().required(),
         encrypted: Joi.boolean().required(),
-        iv: Joi.string().optional(), // for encrypted messages
+        iv: Joi.string().optional().min(0), // for encrypted messages
     })
     const { error, value } = schema.validate(message)
     return { error, value }
