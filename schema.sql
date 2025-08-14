@@ -35,6 +35,7 @@ CREATE TABLE Message (
                          reactions JSON NOT NULL,
                          date DATETIME DEFAULT CURRENT_TIMESTAMP,
                          channelid INT NOT NULL,
+                         iv VARCHAR(255),
                          encrypted BOOLEAN NOT NULL DEFAULT FALSE,
                          FOREIGN KEY (channelid) REFERENCES channels(id) ON DELETE CASCADE,
                          FOREIGN KEY (senderid) REFERENCES User(id) ON DELETE CASCADE

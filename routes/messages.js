@@ -5,8 +5,10 @@ import express from "express"
 import { conn } from "../dbconnecter.js"
 import {authenticate} from "../middleware/auth-helper.js"
 import socketEvents from "../socketHelper.js";
+import { SystemBot } from "../middleware/system_bot.js";
 
 export const router = express.Router();
+const bot = new SystemBot();
 
 // get the latest id of the message for a channel
 // this is used to query for new messages
@@ -94,13 +96,23 @@ router.post('/:channel', authenticate, async (req, res) => {
         return
     }
 
+    // SystemBot parse_messages method returns true if it detects a command
+    // we don't want to save the message if it's a command for privacy.
+    if (bot.parse_message(req, res)) {return res.send("Command processed. If you didn't get a response, it was not a valid command.")}
+    
+
     let reactions = '[]'
     let channel = parseInt(req.params.channel)
     const senderid = parseInt(req.user.userID)
+    if (req.user.iv === null) {
+        const iv = "" // for encryption
+    } else {
+        const iv = req.user.iv
+    }
     try {
         const [result] = await conn.execute(
-            'INSERT INTO Message (senderid, content, reactions, channelid, encrypted) VALUES (?, ?, ?, ?, ?)',
-            [senderid, req.body.content, reactions, channel, req.body.encrypted])
+            'INSERT INTO Message (senderid, content, reactions, channelid, encrypted, iv) VALUES (?, ?, ?, ?, ?, ?)',
+            [senderid, req.body.content, reactions, channel, req.body.encrypted, iv])
         res.send({senderid: req.user.userID, message: req.body.content, reactions: reactions});
         socketEvents.emit('message', result.insertId, "create", channel)
     } catch (error) {
@@ -116,6 +128,7 @@ function validateMessage(message) {
     const schema = Joi.object({
         content: Joi.string().required(),
         encrypted: Joi.boolean().required(),
+        iv: Joi.string().optional(), // for encrypted messages
     })
     const { error, value } = schema.validate(message)
     return { error, value }
