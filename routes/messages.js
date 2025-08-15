@@ -98,16 +98,15 @@ router.post('/:channel', authenticate, async (req, res) => {
 
     // SystemBot parse_messages method returns true if it detects a command
     // we don't want to save the message if it's a command for privacy.
-    if (bot.parse_message(req, res)) {return res.send("Command processed. If you didn't get a response, it was not a valid command.")}
+    //if (bot.parse_message(req, res)) {return res.send("Command processed. If you didn't get a response, it was not a valid command.")}
     
 
     let reactions = '[]'
     let channel = parseInt(req.params.channel)
     const senderid = parseInt(req.user.userID)
-    if (req.user.iv === null) {
-        const iv = "" // for encryption
-    } else {
-        const iv = req.user.iv
+    let iv = ""
+    if (req.body.iv !== null) {
+        iv = req.body.iv;
     }
     try {
         const [result] = await conn.execute(
@@ -128,7 +127,7 @@ function validateMessage(message) {
     const schema = Joi.object({
         content: Joi.string().required(),
         encrypted: Joi.boolean().required(),
-        iv: Joi.string().optional().min(0), // for encrypted messages
+        iv: Joi.string().optional().allow(null, ""), // for encrypted messages
     })
     const { error, value } = schema.validate(message)
     return { error, value }
