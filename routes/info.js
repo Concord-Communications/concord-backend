@@ -1,7 +1,8 @@
 // this is the router for "/api/info/*" 
 import express from 'express'
 import { conn } from '../dbconnecter.js'
-import {authenticate} from "../middleware/auth-helper.js";
+import { authenticate } from "../middleware/auth-helper.js";
+import Joi from "joi"
 
 export const router = express.Router()
 
@@ -89,8 +90,32 @@ router.get('/me', authenticate, async (req, res) => {
             [userid])
         res.send(result)
     } catch (error) {
-        res.status(500).json("internal server error");
+        res.status(500).send("internal server error");
         console.error(error)
         return
+    }
+})
+
+router.post('/channels/new', authenticate, async (req, res) => {
+    const permissions = req.user.global_permissions
+    const validateChannel = (req) => {
+        const schema = Joi.object({
+            channel_name: Joi.string().required(),
+            description: Joi.string().required(),
+        })
+        const { error, value } = schema.validate(req.body)
+        return { error, value }
+    }
+    const { error } = validateChannel(req)
+    if (error) { return res.status(400).send(error.details[0].message) }
+
+    if (permissions.admin !== true) {return res.status(403).send("ur not an admin lil bro")} 
+    try {
+        const [result] = await conn.query("INSERT INTO channels (name, description) VALUE (?, ?)",
+             [req.body.channel_name, req.body.description])
+        return res.send(JSON.stringify({name: req.body.channel_name, description: req.body.description}))
+    } catch (error) {
+        console.error(error)
+        return res.status(500).send("internal server error")
     }
 })
