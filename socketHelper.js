@@ -7,7 +7,7 @@ import Joi from 'joi'
 const socketEvents = new events.EventEmitter();
 export default socketEvents;
 
-export let clients = [];
+export let clients = []; // all **loged in** clients
 
 export function serveConcordSocket() {
     function heartbeat() {
@@ -54,18 +54,11 @@ export function serveConcordSocket() {
         // methods are update, delete, create
         //TODO: make this more efficient, it's currently O(n^2) yay for nested loops
         for (let i = 0; i < clients.length; i++) {
-            if (!getUserChannelAuth(clients[i][1].channels, channel)) { continue; } // see if the user has access to this channel
             clients[i][0].send(JSON.stringify({id: id, channel: channel, method: method, type: "new_message"}))
         }
     })
 }
 
-function getUserChannelAuth(channels, id) {
-    for (let i = 0; i < channels.length; i++) {
-        if (channels[i] == id) {return true}
-    }
-    return false
-}
 
 async function handleLogin(ws, msg, clients) {
     const loginSchema = Joi.object({

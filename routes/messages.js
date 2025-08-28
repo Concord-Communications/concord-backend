@@ -14,9 +14,6 @@ const bot = new SystemBot();
 // this is used to query for new messages
 router.get("/latest/:channel", authenticate, async (req, res) => {
     const target=parseInt(req.params.channel)
-    if (!userChannelPermitted(parseInt(req.params.channel), req.user.channels)) {
-        return res.status(403).send("Not authorized.")
-    }
     try {
         const [result] = await conn.query('SELECT id FROM Message WHERE channelid=? ORDER BY id DESC LIMIT 1',
             [target])
@@ -31,28 +28,6 @@ router.get("/latest/:channel", authenticate, async (req, res) => {
 router.get('/:channel/:id', authenticate, async (req, res) => {
     // channel and then messages after that specified id
     const channel = parseInt(req.params.channel);
-    if (!userChannelPermitted(channel, req.user.channels)) {
-        return res.status(403).send("Not authorized.")
-    }
-
-    if (req.query.ignore !== 1) {
-        const newest_message = parseInt(req.params.id) - 20
-        try {
-            const [result] = await conn.execute("SELECT lastMessageid FROM UserChannels WHERE userid=? AND channelid=?",
-                [req.user.userID, channel])
-
-            if(!(result[0].lastMessageid > newest_message)) {
-                await conn.execute(
-                    "UPDATE UserChannels SET lastMessageid=? WHERE userid=? AND channelid=?",
-                    [newest_message, req.user.userID, channel]
-                )
-            }
-
-        } catch (e) {
-            console.error(e)
-            console.warn("ALERT! api/messages/:channel/:id isn't handling read messages for some reason!")
-        }
-    }
 
     if (parseInt(req.query.singleOnly) === 1) {
         try {
@@ -86,9 +61,6 @@ router.post('/:channel', authenticate, async (req, res) => {
     // request validation
     // needs a name that is less than 18 characters but is more than 0
 
-    if (!userChannelPermitted(req.params.channel, req.user.channels)) {
-        return res.status(403).send("Not authorized.")
-    }
 
     const { error } = validateMessage(req.body)
     if (error) {
@@ -133,12 +105,3 @@ function validateMessage(message) {
     return { error, value }
 }
 
-
-function userChannelPermitted(id, array) {
-    for (let i = 0; i < array.length; i++) {
-        if (array[i] == id) {
-            return true
-        }
-    }
-    return false
-}

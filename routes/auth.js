@@ -59,11 +59,10 @@ router.post('/', async (req, res) => {
         
         // check if user exists, and if they do, fetch their records to put into the JWT
         let [result] = await conn.execute(
-            "SELECT User.password, User.id, User.permissions, GROUP_CONCAT(UserChannels.channelid) AS channels FROM User LEFT JOIN UserChannels ON User.id=UserChannels.userid WHERE User.handle=? GROUP BY User.id",
+            "SELECT password, id, global_permissions FROM User WHERE handle=? GROUP BY id",
             [req.body.userhandle])
         
         // cleanup the user's channels
-        result[0].channels = result[0].channels ? result[0].channels.split(',').map(Number) : [];
         if (result[0] == null) {
             return res.status(404).send("No user with matching handle")
         }
@@ -72,12 +71,9 @@ router.post('/', async (req, res) => {
         const validpassword = await bcrypt.compare(req.body.password, result[0].password)
         if(!validpassword) {res.status(401).send('Invalid password'); return}
 
-        if (result[0].channels == null) {result[0].channels = []} // it always should be an array
-
         const token = jwt.sign({
             userID: result[0].id,
-            permissions: result[0].permissions,
-            channels: result[0].channels,
+            global_permissions: result[0].global_permissions,
             tokenVersion: 0,
         }, process.env.JWT_SECRET, { expiresIn: jwt_expiresIn }) // make the token expire in the amount of time specified in jwt_expiresIn
         res.send(token)
@@ -140,27 +136,30 @@ router.post('/register', async (req, res) => {
     if (errorFound) {
         return res.status(409).send("User already exists")
     }
+    
 
-    const result = await createUser(req, res) // attempt creating a user
+    const adminperms = JSON.stringify({admin: true})
+    const defaultperms = JSON.stringify({})
+    
+    // if the user is the first user created we give them admin
+    // this makes (in theory) the owner admin
+    let result = null
+    if (isFirstAuth) {
+        try {
+            result = await createUser(req, adminperms)
+        } catch (error) {
+            console.log(`🧙‍♂️ you have an error: ` + error)
+        }
+        console.warn("Admin user created! This is the first user created, we assume this is the owner creating an admin account. If this isn't the case, please change the permissions manually in the database. userid: " + result)
+        
+    } else {
+        result = await createUser(req, defaultperms)
+    }
+
     if (!result) {
         return res.status(500).send("Internal server error")
     }
-    // if the user is the first user created we give them admin
-    // this makes (in theory) the owner admin
-    if (isFirstAuth) {
-        console.warn("Admin user created! This is the first user created, we assume this is the owner creating an admin account. If this isn't the case, please change the permissions manually in the database. userid: " + result
-        )
-        try {
-            // add the assumed owner to #general
-            await conn.execute('INSERT INTO UserChannels (userid, channelid) VALUES (?, ?)', [result, 1]) // 1 is the general channel id
-            console.info("added first user (assumed owner) to general channel")
-        } catch (error) {
-            console.error(`🧙 You have an error: ${error.message}`)
-            console.error("Failed to add first user (assumed owner) to general channel, please add them manually")
-        }
-        
-    }
-    
+
     // get the user details and create a JWT if possible
     const details = await findUserByID(result)
     if (!details) {return res.send({id: result, authToken: false})} // if there was an issue getting the details at least return the user id
@@ -178,10 +177,8 @@ async function findUserByID(id) {
     // it contains credentials
     try {
         let [user] = await conn.execute('SELECT * FROM User WHERE id=?', [id])
-        const [channels] = await conn.execute('SELECT channelid FROM UserChannels WHERE userid = ?', [id])
         user = {
-            ...user,
-            channels: channels,
+            ...user
         }
         return user
     } catch (error) {
@@ -189,7 +186,7 @@ async function findUserByID(id) {
     }
 }
 
-async function createUser(req) {
+async function createUser(req, permissions) {
 
     // hash the password
     const password = req.body.password
@@ -200,8 +197,8 @@ async function createUser(req) {
     try {
         // create a record and return the id
         const [result] = await conn.execute(
-            "INSERT INTO User (name, handle, description, password, permissions) VALUES (?, ?, ?, ?, 0)",
-            [req.body.name, req.body.userhandle, req.body.description, hash]
+            "INSERT INTO User (name, handle, description, password, global_permissions) VALUES (?, ?, ?, ?, ?)",
+            [req.body.name, req.body.userhandle, req.body.description, hash, permissions]
         )
 
         return result.insertId
