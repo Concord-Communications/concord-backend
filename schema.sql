@@ -58,6 +58,6 @@ CREATE TABLE Message (
 -- default setup for channels so the user has something to play with
 -- DO NOT REMOVE THIS!!!!!!! removal of the system user will cause it so two owners will be made (see auth.js)
 INSERT INTO channels (id, name, description) VALUE (1, "general", "*general* discussions");
-INSERT INTO User (id, name, handle, description, global_permissions, password, name_color) VALUE (1, 'system', 'system', 'system user', '{"admin": True}', 'nope', '#ddff00ff'); -- password is impossible to get because it is hashed normally
+INSERT INTO User (id, name, handle, description, global_permissions, password, name_color) VALUE (1, 'system', 'system', 'system user', '{"admin": true}', 'nope', '#ddff00ff'); -- password is impossible to get because it is hashed normally
 -- INSERT INTO UserChannels (userid, channelid) VALUE (1, 1); -- system user is in the general channel
 INSERT INTO Message (senderid, content, reactions, channelid) VALUE (1, "Welcome to concord chat! This is the #general channel. You can use this channel to chat with other users. You can also create new channels and invite users if you have the default bot installed. use /help for more info.", '[]', 1);
