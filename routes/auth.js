@@ -4,8 +4,10 @@ import { conn } from '../dbconnecter.js'
 import express from 'express'
 import Joi from "joi"
 import bcrypt from 'bcrypt'
+import crypto from "crypto"
 
 const jwt_expiresIn = "7d" // sign jwts for this long
+const apikeys = {} // this is mainly for adding users via invite when the no new users thing is on
 
 export const router = express.Router()
 
@@ -47,6 +49,55 @@ async function findUserFromHandle(req) {
     return errorfound
 }
 
+function generateInvite() {
+    const id = crypto.randomBytes(16).toString('hex')
+
+    // check for any duplicates
+    if (apikeys[id] != undefined || apikeys[id] != null) {
+        console.warn("Hit a duplicate API key! Regenerating...")
+        return generateApiKey()
+    }
+
+    const today = new Date()
+    let expire = new Date(today)
+    expire.setDate(today.getDate() + 7) // this works. if it aint broke, don't fix it 
+
+    apikeys[id] = { type: "invite", expires: expire } 
+
+    return jwt.sign({
+        type: "invite",
+        id: id,
+    }, process.env.JWT_SECRET, { expiresIn: "7d" })
+}
+
+function verifyInvite(id) {
+    // see if it exists
+    if (apikeys[id] === undefined || apikeys[id] === null) {return false}
+    const invite = apikeys[id]
+
+    // check if it expired
+    const now = new Date()
+    if (invite.expire < now) { delete apikeys[id]; return false}
+
+    // check if it's an invite
+    if (invite.type !== "invite") { return false }
+
+    // if it passes, return true
+    return true
+}
+
+router.post('/admin/invite', async (req, res) => {
+    // check if the user is an admin
+    if (req.body.global_permissions.admin !== true) {
+        return res.status(403).send("Invites require admin!")
+    }
+
+    const jwt = generateInvite()
+    res.send(jwt)
+})
+
+
+
 // Log in endpoint
 router.post('/', async (req, res) => {
     const { error } = validateLogin(req)
@@ -56,7 +107,6 @@ router.post('/', async (req, res) => {
     }
 
     try {
-        
         // check if user exists, and if they do, fetch their records to put into the JWT
         let [result] = await conn.execute(
             "SELECT password, id, global_permissions FROM User WHERE handle=? GROUP BY id",
@@ -121,7 +171,20 @@ router.post('/register', async (req, res) => {
     }
 
     if (!process.env.creating_users_permitted && !isFirstAuth) { // see above logic for first auth
-        return res.status(403).send("This server requires invites")
+        // see if the message has an invite, otherwise reject it
+        const token = req.headers['x-invite-token']
+        if (token === undefined || token === null) {
+            return res.status(403).send("This server requires invites")
+        }
+        // see if it's a valid jwt
+        try {
+            const decoded = await jwt.verify(token, process.env.JWT_SECRET)
+        } catch (error) {
+            return res.status(403).send("This server requires invites")
+        }
+        // see if it's even an invite according to the jwt
+        if (decoded.type !== "invite") { return res.status(400).send("token type is not a valid invite") }
+        if (!verifyInvite(decoded)) { return res.status(403).send("Invalid invite. Your invite may have expired.") }
     }
 
     const { error } = validateUser(req.body) 
