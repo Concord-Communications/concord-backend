@@ -5,6 +5,7 @@ import express from 'express'
 import Joi from "joi"
 import bcrypt from 'bcrypt'
 import crypto from "crypto"
+import { authenticate } from "../middleware/auth-helper.js"
 
 const jwt_expiresIn = "7d" // sign jwts for this long
 const apikeys = {} // this is mainly for adding users via invite when the no new users thing is on
@@ -86,9 +87,9 @@ function verifyInvite(id) {
     return true
 }
 
-router.post('/admin/invite', async (req, res) => {
+router.post('/admin/invite', authenticate, async (req, res) => {
     // check if the user is an admin
-    if (req.body.global_permissions.admin !== true) {
+    if (req.user.global_permissions.admin !== true) {
         return res.status(403).send("Invites require admin!")
     }
 
@@ -179,12 +180,12 @@ router.post('/register', async (req, res) => {
         // see if it's a valid jwt
         try {
             const decoded = await jwt.verify(token, process.env.JWT_SECRET)
+            // see if it's even an invite according to the jwt
+            if (decoded.type !== "invite") { return res.status(400).send("token type is not a valid invite") }
+            if (!verifyInvite(decoded.id)) { return res.status(403).send("Invalid invite. Your invite may have expired.") }
         } catch (error) {
             return res.status(403).send("This server requires invites")
         }
-        // see if it's even an invite according to the jwt
-        if (decoded.type !== "invite") { return res.status(400).send("token type is not a valid invite") }
-        if (!verifyInvite(decoded)) { return res.status(403).send("Invalid invite. Your invite may have expired.") }
     }
 
     const { error } = validateUser(req.body) 
@@ -228,7 +229,7 @@ router.post('/register', async (req, res) => {
     if (!details) {return res.send({id: result, authToken: false})} // if there was an issue getting the details at least return the user id
     const token = jwt.sign({
         userID: result,
-        permissions: details[0].permissions,
+        gloabl_permissions: details[0].permissions,
         channels: details[0].channels,
         tokenVersion: 0,
     }, process.env.JWT_SECRET)
