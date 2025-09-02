@@ -113,7 +113,7 @@ router.post('/channels/new', authenticate, async (req, res) => {
     try {
         const [result] = await conn.query("INSERT INTO channels (name, description) VALUE (?, ?)",
              [req.body.channel_name, req.body.description])
-        return res.send(JSON.stringify({name: req.body.channel_name, description: req.body.description}))
+        return res.send("successfully created channel")
     } catch (error) {
         console.error(error)
         return res.status(500).send("internal server error")
