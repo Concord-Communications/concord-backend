@@ -86,7 +86,7 @@ router.get('/me', authenticate, async (req, res) => {
     const userid = req.user.userID
     try {
         const [result] = await conn.execute(
-            "SELECT id, name, handle, description, created, permissions, channels, verified FROM User WHERE id = ?",
+            "SELECT id, name, handle, description, created, global_permissions, channels, verified FROM User WHERE id = ?",
             [userid])
         res.send(result)
     } catch (error) {
