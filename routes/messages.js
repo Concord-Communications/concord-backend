@@ -70,7 +70,9 @@ router.post('/:channel', authenticate, async (req, res) => {
 
     // SystemBot parse_messages method returns true if it detects a command
     // we don't want to save the message if it's a command for privacy.
-    //if (bot.parse_message(req, res)) {return res.send("Command processed. If you didn't get a response, it was not a valid command.")}
+    if (bot.parse_message(req, res)) {
+        return res.send("Command processed. If you didn't get a response, it was not a valid command.")
+    }
     
 
     let reactions = '[]'

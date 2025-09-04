@@ -19,12 +19,12 @@ export class SystemBot {
 
     async parse_message(req, res) {
         let message = req.body.content.trim()
-        console.log("Debug: new message:", message)
         if (!message.startsWith('/')) {return false} // not a command
         const args = message.slice(1).split(' ')
         // see if the command exists
         if (args[0].length > 25 || !(args[0] in this.commands)) {
             // don't send an error because bots might have a command registered under the same name
+            console.log("command triggered")
             return true // not a valid command, but might be someone trying to use a command
         }
 
