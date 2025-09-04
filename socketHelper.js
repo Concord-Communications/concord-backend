@@ -52,7 +52,6 @@ export function serveConcordSocket() {
     socketEvents.on('message', async (id, method, channel) => {
         console.log(`Broadcasting message`);
         // methods are update, delete, create
-        //TODO: make this more efficient, it's currently O(n^2) yay for nested loops
         for (let i = 0; i < clients.length; i++) {
             clients[i][0].send(JSON.stringify({id: id, channel: channel, method: method, type: "new_message"}))
         }
@@ -77,7 +76,7 @@ async function handleLogin(ws, msg, clients) {
             ws.close()
         }
     } catch (e) {
-        ws.send(e.details[0].message)
+        ws.send("invalid token or malformed packet")
         ws.close()
     }
 }
