@@ -182,7 +182,11 @@ router.post('/register', async (req, res) => {
             const decoded = await jwt.verify(token, process.env.JWT_SECRET)
             // see if it's even an invite according to the jwt
             if (decoded.type !== "invite") { return res.status(400).send("token type is not a valid invite") }
-            if (!verifyInvite(decoded.id)) { return res.status(403).send("Invalid invite. Your invite may have expired.") }
+            if (!verifyInvite(decoded.id)) { 
+                return res.status(403).send("Invalid invite. Your invite may have expired.") 
+            } else {
+                delete apikeys[decoded.id] // remove it from the list once It's been used
+            }
         } catch (error) {
             return res.status(403).send("This server requires invites")
         }
