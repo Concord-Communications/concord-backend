@@ -2,7 +2,7 @@ import { WebSocketServer } from 'ws'
 import events from 'events'
 import jwt from 'jsonwebtoken'
 import Joi from 'joi'
-
+import { conn } from './dbconnecter.js'
 // eventemmitter so socket can notify clients of new messages
 const socketEvents = new events.EventEmitter();
 export default socketEvents;
@@ -82,15 +82,32 @@ async function handleLogin(ws, msg, clients) {
 }
 
 export async function direct_message(clients, target_user, senderid, content) {
-    for (let i = 0; i < clients.length; i++) {
-        if (clients[i][1].id == target_user) {
-            clients[i][0].send(JSON.stringify({
-                id: senderid,
-                content: content,
-                type: "direct_message"
-            }));
-            return true;
+    try {
+            console.log("Direct Message from (userid): " + senderid + ", to: " + target_user)
+            const [result] = await conn.query("SELECT name, handle FROM User WHERE id = ?", [senderid])
+            for (let i = 0; i < clients.length; i++) {
+                if (clients[i][1].userID == target_user) {
+                clients[i][0].send(JSON.stringify({
+                    id: 0,
+                    senderid: senderid,
+                    content: content,
+                    reactions: [],
+                    encrypted: 0,
+                    iv: null,
+                    type: "direct_message",
+                    name: "Direct Message: " + result[0].name,
+                    handle: result[0].handle,
+                    name_color: "#ffcc00ff",
+                    channelid: 0,
+                    date: new Date()
+                }));
+                return true;
         }
     }
     return false;
+
+    } catch (error) {
+        console.error(error)
+        return false
+    }
 }
