@@ -3,65 +3,61 @@
 import { direct_message, clients } from "../socketHelper.js"
 import { conn } from "../dbconnecter.js"
 
-export class SystemBot {
-    constructor() {
-        this.commands = {
-            help: this.help,
-            ban: this.ban,
-            unban: this.unban,
-            dm: this.direct_message,
-            msg: this.direct_message,
-            on: this.get_online_users,
-            online: this.get_online_users,
+const system_bot_id = 1
+
+export async function parse_message(input, userid) {
+    let message = input.trim()
+    if (message.startsWith("/")) {
+        message = message.slice(1) // remove the `/` at the start
+        message = message.trim() // remove any whitespace too
+
+        // still say it's a command, but don't run it if the message is too long
+        if (message.length > 50) {
+            direct_message(clients, userid, system_bot_id, "Command is too long! (limit 50)")
+            return true
+        } else if (message.length === 0) { // length of 0 after the slash is removed
+            direct_message(clients, userid, system_bot_id, "Messages can't start with a slash")
+            return true
         }
-    }
-
-
-    async parse_message(req, res) {
-        let message = req.body.content.trim()
-        console.log("Debug: new message:", message)
-        if (!message.startsWith('/')) {return false} // not a command
-        const args = message.slice(1).split(' ')
-        // see if the command exists
-        if (args[0].length > 25 || !(args[0] in this.commands)) {
-            // don't send an error because bots might have a command registered under the same name
-            return true // not a valid command, but might be someone trying to use a command
-        }
-
-        // some of these have async methods, but we don't care about the response
-        this.commands[args[0]](req, res, args)
-
+        parse_command(message, userid) // no need to await
         return true
     }
+    return false
+}
 
-
-    help(req, res, args) {
-        direct_message(clients, req.user.userID, 1, 
-            "TODO: add the help message here, this is a placeholder for now"
-        )
-    }
-    ban(req, res, args) {
-        direct_message(clients, req.user.userID, 1, "Ban command is not implemented yet. Remove them from the DB, change the JWT password, and restart if you are extremely desperate.")
+async function parse_command(message, senderid) {
+    let args = message.split(' ')
+    if (commands[args[0]] === undefined) {
+        return direct_message(clients, senderid, system_bot_id, "unrecognised command")
     }
 
+    commands[args[0]][0](args, senderid)
+}
 
-    unban(req, res, args) {
-        direct_message(clients, req.user.userID, 1, "Unban command is not implemented yet, neither should the ban command be. If you somehow banned someone... good luck.")
+function help(args, senderid) {
+    let commandslist = "System Commands:\n"
+    for (let key in commands) {
+        commandslist += "• " + key + ": " + commands[key][1] + "\n"
     }
+    direct_message(clients, senderid, system_bot_id, commandslist)
+}
 
-    async direct_message(req, res, args) {
-        // direct message should not be saved to the database because if one person spams it won't be detected until it's too late
-        try {
-            const [result] = await conn.query("SELECT id FROM User WHERE handle = ?", [args[1]]) 
-            direct_message(clients, result[0].id, req.user.userID, args.slice(2).join(" "))
-        } catch (error) {
-            direct_message(clients, req.user.userID, 1, "Error finding user")
-            return
-        }
+function dice(args, senderid) {
+    let reply = ""
+    let dice = parseInt(args[1])
+    if (Number.isNaN(dice)) {
+        return direct_message(clients, senderid, system_bot_id, "thats not a number you troll")
     }
-    get_online_users(req, res, args) {
-        direct_message(clients, req.user.userID, 1, "online users is not implemented yet.")
-        // get the names of users online (sockets)
+    if (dice > 100 || dice < 2) {
+        reply = "you can only roll between 2-100"
+    } else {
+        reply = "you rolled a " + (Math.floor(Math.random() * dice) + 1) + "! [d" + dice + "]"
     }
+    direct_message(clients, senderid, system_bot_id, reply)
+}
 
+
+const commands = {
+    help: [help, "prints the help command"],
+    roll: [dice, "Roll a dice (2-100)"],
 }

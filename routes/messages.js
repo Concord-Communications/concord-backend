@@ -5,15 +5,14 @@ import express from "express"
 import { conn } from "../dbconnecter.js"
 import {authenticate} from "../middleware/auth-helper.js"
 import socketEvents from "../socketHelper.js";
-import { SystemBot } from "../middleware/system_bot.js";
+import { parse_message } from "../middleware/system_bot.js";
 
 export const router = express.Router();
-const bot = new SystemBot();
 
 // get the latest id of the message for a channel
 // this is used to query for new messages
 router.get("/latest/:channel", authenticate, async (req, res) => {
-    const target=parseInt(req.params.channel)
+    const target = parseInt(req.params.channel)
     try {
         const [result] = await conn.query('SELECT id FROM Message WHERE channelid=? ORDER BY id DESC LIMIT 1',
             [target])
@@ -70,12 +69,12 @@ router.post('/:channel', authenticate, async (req, res) => {
 
     // SystemBot parse_messages method returns true if it detects a command
     // we don't want to save the message if it's a command for privacy.
-    //if (bot.parse_message(req, res)) {return res.send("Command processed. If you didn't get a response, it was not a valid command.")}
+    const senderid = parseInt(req.user.userID)
+    if (await parse_message(req.body.content, senderid)) {return res.send("Command processed. If you didn't get a response, it was not a valid command.")}
     
 
     let reactions = '[]'
     let channel = parseInt(req.params.channel)
-    const senderid = parseInt(req.user.userID)
     let iv = ""
     if (req.body.iv !== null) {
         iv = req.body.iv;
