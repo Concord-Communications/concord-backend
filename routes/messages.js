@@ -116,10 +116,7 @@ router.post('/relays/:channel', authenticate, async (req, res) => {
         channelid: relaychannel,
         date: new Date()
     }
-
-    console.log("troll")
     await socketEvents.emit('relay', response, relaychannel)
-    console.log("trollx2")
     res.send("relayed to channel: " + relaychannel)
 })
 

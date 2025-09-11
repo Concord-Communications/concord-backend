@@ -110,7 +110,7 @@ router.post('/', async (req, res) => {
     try {
         // check if user exists, and if they do, fetch their records to put into the JWT
         let [result] = await conn.execute(
-            "SELECT password, id, global_permissions FROM User WHERE handle=? GROUP BY id",
+            "SELECT password, id, global_permissions, name FROM User WHERE handle=? GROUP BY id",
             [req.body.userhandle])
         
         // cleanup the user's channels
@@ -124,6 +124,8 @@ router.post('/', async (req, res) => {
 
         const token = jwt.sign({
             userID: result[0].id,
+            userhandle: req.body.userhandle,
+            name: result[0].name,
             global_permissions: result[0].global_permissions,
             tokenVersion: 0,
         }, process.env.JWT_SECRET, { expiresIn: jwt_expiresIn }) // make the token expire in the amount of time specified in jwt_expiresIn
@@ -233,6 +235,8 @@ router.post('/register', async (req, res) => {
     if (!details) {return res.send({id: result, authToken: false})} // if there was an issue getting the details at least return the user id
     const token = jwt.sign({
         userID: result,
+        name: req.body.name,
+        userhandle: req.body.userhandle,
         gloabl_permissions: details[0].permissions,
         channels: details[0].channels,
         tokenVersion: 0,
