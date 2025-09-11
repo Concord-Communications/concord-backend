@@ -91,6 +91,38 @@ router.post('/:channel', authenticate, async (req, res) => {
     }
 })
 
+router.post('/relays/:channel', authenticate, async (req, res) => {
+    const { error } = await validateMessage(req.body)
+    if (error) {
+        res.status(400).send(error.details[0].message)
+        return
+    }
+
+    const relaychannel = parseInt(req.params.channel)
+    if (Number.isNaN(relaychannel)) { return res.status(400).send("channel *MUST* be an integer between 1-100")}
+    if (relaychannel > 100 || relaychannel < 1) { return res.status(400).send("channel *MUST* be an integer between 1-100") }
+
+    let response = {
+        id: 0,
+        senderid: req.user.userID,
+        content: req.body.content,
+        reactions: [],
+        encrypted: 0,
+        iv: null,
+        type: "relay",
+        name: req.user.name,
+        handle: req.user.userhandle,
+        name_color: "#ff9a2eff", // not calling the DB to reduce compute cost. If you want this as a feature, please request it.
+        channelid: relaychannel,
+        date: new Date()
+    }
+
+    console.log("troll")
+    await socketEvents.emit('relay', response, relaychannel)
+    console.log("trollx2")
+    res.send("relayed to channel: " + relaychannel)
+})
+
 //TODO: add methods to update and delete messages
 
 
