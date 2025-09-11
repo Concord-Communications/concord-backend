@@ -13,6 +13,7 @@ Like the repo? Consider starring it :star:
 
 ## Troubleshooting
 > Not much here yet, were still in beta
+- is your wifi on (docker for some reason doesn't like it being off for the auto setup)
 - did you forget to git clone the code?
 - have you done `chmod +x ./update_compose.sh` before running it
 - Do you have docker installed and running
